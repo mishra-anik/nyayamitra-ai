@@ -1,0 +1,9 @@
+# Exclude node_modules anywhere in the repo (server/node_modules, client/node_modules, etc.)
+node_modules/
+
+# Exclude environment files everywhere
+.env
+.env.*
+
+# Keep example environment files
+!.env.example

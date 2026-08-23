@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "../",               /* Set to parent folder if importing outer directories */
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "server.ts",                    /* Root file */
+    "**/*",                         /* Any nested files */
+    "../shared/**/*"                /* Outer directory */
+  ]
+}
