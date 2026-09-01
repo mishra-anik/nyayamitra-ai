@@ -1,5 +1,3 @@
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import { PDFParse } from "pdf-parse";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Document } from "@langchain/core/documents";
@@ -12,7 +10,7 @@ const standardFontDataUrl = new URL(
 export const documentParse = async (
   fileBuffer: Uint8Array,
   fileName?: string,
-) => {
+): Promise<Document[]> => {
   const data = new PDFParse({
     data: fileBuffer,
     standardFontDataUrl,
@@ -41,7 +39,7 @@ export const documentParse = async (
             pageContent: chunk,
             metadata: {
               pageNumber: page.num,
-              fileName: fileName,
+              fileName,
             },
           }),
       );

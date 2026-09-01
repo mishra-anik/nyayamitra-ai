@@ -26,12 +26,14 @@
     "pdf-parse": "^2.4.5",
     "pg": "^8.22.0",
     "pgvector": "^0.3.0",
+    "ws": "^8.21.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
     "@types/node": "^26.1.2",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.23.5",
     "typescript": "^7.0.2"
   }

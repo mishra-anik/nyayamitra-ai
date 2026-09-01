@@ -6,7 +6,10 @@ interface CustomRequest extends Request {
   file?: Express.Multer.File;
 }
 
-export const uploadData = async (req: CustomRequest, res: Response) => {
+export const uploadData = async (
+  req: CustomRequest,
+  res: Response,
+): Promise<Response> => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -22,10 +25,10 @@ export const uploadData = async (req: CustomRequest, res: Response) => {
     await vectorEmbed(result);
 
     return res.status(200).json({
-      message: "file recived",
+      message: "File received",
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     return res.status(500).json({
