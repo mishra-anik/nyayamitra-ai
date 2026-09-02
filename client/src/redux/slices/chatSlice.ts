@@ -1,7 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+export interface ChatMessage {
+  inputText: string;
+  role: "user" | "assistant";
+  chatId?: string;
+}
+
 interface ChatState {
-  messages: string[];
+  messages: ChatMessage[];
   isconnected: boolean;
   chatStatus:
     | "IDLE"
@@ -10,6 +16,7 @@ interface ChatState {
     | "GENERATING_RESPONSE"
     | "COMPLETED";
   chatStatusMessage: string;
+  activeChatId: string; 
 }
 
 type ChatStatus = ChatState["chatStatus"];
@@ -19,13 +26,14 @@ const initialState: ChatState = {
   isconnected: false,
   chatStatus: "IDLE",
   chatStatusMessage: "",
+  activeChatId: "",
 };
 
 const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
-    addMessage: (state, action: PayloadAction<string>) => {
+    addMessage: (state, action: PayloadAction<ChatMessage>) => {
       state.messages.push(action.payload);
     },
     clearMessages: (state) => {
@@ -40,6 +48,9 @@ const chatSlice = createSlice({
     setChatStatusMessage: (state, action: PayloadAction<string>) => {
       state.chatStatusMessage = action.payload;
     },
+    setActiveChatId: (state, action: PayloadAction<string>) => {
+      state.activeChatId = action.payload;
+    },
   },
 });
 
@@ -49,5 +60,6 @@ export const {
   setConnected,
   setChatStatus,
   setChatStatusMessage,
+  setActiveChatId,
 } = chatSlice.actions;
 export default chatSlice.reducer;
