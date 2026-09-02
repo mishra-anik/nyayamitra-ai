@@ -81,17 +81,22 @@ const Home = () => {
     if (socketRef.current && isConnected && inputMessage.trim()) {
       socketRef.current.send(JSON.stringify({ inputMessage }));
       setInputMessage("");
+      setRowsNum(1);
     }
   };
 
   const LINE_HEIGHT = 20;
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputMessage(e.target.value);
+    const value = e.target.value;
+    setInputMessage(value);
 
     const textarea = e.target;
 
-    // Check if content needs more than one line
+    if (value.trim() === "") {
+      setRowsNum(1);
+      return;
+    }
 
     if (textarea.scrollHeight > LINE_HEIGHT) {
       setRowsNum(2);
@@ -101,29 +106,36 @@ const Home = () => {
   };
 
   return (
-    <main className="h-full max-w-10xl flex flex-col items-center p-[1em]">
-      <div className="w-full max-w-xl mx-auto flex-1 min-h-0 flex flex-col">
-        {/* Messages */}
-        <div className="flex-1 min-h-0 border border-border bg-surface rounded-lg p-4 mb-4 overflow-y-auto shadow-sm">
-          {messages ? (
-            messages.map((msg, index) => (
-              <div
-                key={index}
-                className="mb-2 p-2 bg-surface-muted rounded text-text text-sm"
-              >
-                {msg}
-              </div>
-            ))
+    <main className="flex h-full  w-full items-center justify-center bg-background p-3 sm:p-5">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-end gap-3">
+        <div
+          className={
+            messages.length === 0
+              ? "w-full px-2 py-0"
+              : "flex-1 min-h-0 overflow-y-auto rounded-[28px] border border-border/70 bg-surface/70 px-2 py-3 shadow-[0_18px_50px_rgba(36,48,47,0.08)] backdrop-blur-sm sm:px-4"
+          }
+        >
+          {messages.length === 0 ? (
+            <div className="flex min-h-[200px] items-center justify-center sm:min-h-[260px]">
+              <HeroText />
+            </div>
           ) : (
-            <HeroText />
+            <div className="space-y-3 pb-2">
+              {messages.map((msg, index) => (
+                <div key={index} className="flex w-full justify-start">
+                  <div className="max-w-[85%] rounded-2xl border border-border bg-surface-muted px-4 py-3 text-sm leading-6 text-text shadow-sm sm:max-w-[80%]">
+                    {msg}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        <div className="input-box">
-          {/* Plus button */}
+        <div className="input-box w-full max-w-3xl self-center">
           <button
             type="button"
-            className=" bottom-2.5 left-3 flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
             onClick={() => {
               // Handle attachment/menu
             }}
@@ -153,16 +165,15 @@ const Home = () => {
               }
             }}
             placeholder="Message..."
-            rows={!inputMessage?1 :rowsNum}
-            className="flex-1"
+            rows={inputMessage.trim() ? 1 : rowsNum}
+            className="flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[15px] leading-5 text-foreground placeholder:text-muted focus:outline-none"
           />
 
-          {/* Send arrow */}
           <button
             type="button"
             onClick={sendMessage}
             disabled={!isConnected || !inputMessage.trim()}
-            className="bg-primary hover:bg-primary"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
