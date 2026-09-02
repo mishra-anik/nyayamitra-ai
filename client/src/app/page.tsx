@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { addMessage, setConnected ,setChatStatus , setChatStatusMessage } from "@/redux/slices/chatSlice";
+import {
+  addMessage,
+  setConnected,
+  setChatStatus,
+  setChatStatusMessage,
+  setActiveChatId,
+} from "@/redux/slices/chatSlice";
+import type { ChatMessage } from "@/redux/slices/chatSlice";
 import HeroText from "@/components/HeroText";
 
 const Home = () => {
@@ -11,9 +18,16 @@ const Home = () => {
   const messages = useAppSelector((state) => state.chat.messages);
   const isConnected = useAppSelector((state) => state.chat.isconnected);
   const chatStatus = useAppSelector((state) => state.chat.chatStatus);
-  const chatStatusMessage = useAppSelector((state) => state.chat.chatStatusMessage);
+  const chatStatusMessage = useAppSelector(
+    (state) => state.chat.chatStatusMessage,
+  );
+  const activeChatId = useAppSelector((state) => state.chat.activeChatId);
 
-  const [inputMessage, setInputMessage] = useState<string>("");
+  const [inputMessage, setInputMessage] = useState<ChatMessage>({
+    inputText: "",
+    role: "user",
+    chatId: "",
+  });
   const [rowsNum, setRowsNum] = useState<number>(1);
 
   useEffect(() => {
@@ -37,14 +51,22 @@ const Home = () => {
             dispatch(setChatStatusMessage(payload.message));
             break;
           case "FINAL_RESPONSE":
-            dispatch(addMessage(payload.data));
+            dispatch(
+              addMessage({
+                inputText: payload.data.directAnswer,
+                role: "assistant",
+              }),
+            );
             break;
           case "ERROR":
-            dispatch(addMessage(`Error: ${payload.message}`));
+            dispatch(
+              addMessage({
+                inputText: `Error: ${payload.message}`,
+                role: "assistant",
+              }),
+            );
             break;
         }
-
-       
       } catch {
         // Non-JSON response
         dispatch(addMessage(event.data));
@@ -77,10 +99,16 @@ const Home = () => {
   }, [dispatch]);
 
   const sendMessage = () => {
-    if (socketRef.current && isConnected && inputMessage.trim()) {
-      socketRef.current.send(JSON.stringify({ inputMessage }));
+    const chatId = crypto.randomUUID();
 
-      setInputMessage("");
+    if (socketRef.current && isConnected && inputMessage.inputText.trim()) {
+      socketRef.current.send(
+        JSON.stringify({ inputMessage: inputMessage.inputText }),
+      );
+      dispatch(addMessage({ ...inputMessage, chatId }));
+      dispatch(setActiveChatId(chatId));
+
+      setInputMessage({ inputText: "", role: "user" , chatId: ""});
       setRowsNum(1);
     }
   };
@@ -90,7 +118,7 @@ const Home = () => {
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
 
-    setInputMessage(value);
+    setInputMessage({ ...inputMessage, inputText: value });
 
     const textarea = e.target;
 
@@ -110,11 +138,6 @@ const Home = () => {
     <main className="flex h-[100dvh] w-full flex-col px-4 py-2">
       {/* ================= MESSAGE AREA ================= */}
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden scrollbar-hide">
-        {chatStatus !== "IDLE" && chatStatus !== "COMPLETED" && chatStatusMessage && (
-          <div className="px-4 py-2 text-sm text-muted" role="status">
-            {chatStatusMessage}
-          </div>
-        )}
         {messages.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
             <HeroText />
@@ -125,7 +148,22 @@ const Home = () => {
             <div className="space-y-2">
               {messages.map((msg, index) => (
                 <div key={index} className="w-full">
-                  <div className="whitespace-pre-wrap break-words">{msg}</div>
+                  <div
+                    className={`whitespace-pre-wrap break-words ${msg.role === "user" ? "text-muted " : "text-foreground "}`}
+                  >
+                    {msg.inputText}
+                    {msg.chatId === activeChatId &&
+                      chatStatus !== "IDLE" &&
+                      chatStatus !== "COMPLETED" &&
+                      chatStatusMessage && (
+                        <div
+                          className="px-4 py-2 text-sm text-muted"
+                          role="status"
+                        >
+                          {chatStatusMessage}
+                        </div>
+                      )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -176,7 +214,7 @@ const Home = () => {
 
           {/* Textarea */}
           <textarea
-            value={inputMessage}
+            value={inputMessage.inputText}
             onChange={handleInput}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -185,7 +223,7 @@ const Home = () => {
               }
             }}
             placeholder="Message..."
-            rows={inputMessage.trim() ? 1 : rowsNum}
+            rows={inputMessage.inputText.trim() ? 1 : rowsNum}
             className="flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[15px] leading-5 text-foreground placeholder:text-muted focus:outline-none"
           />
 
@@ -193,7 +231,7 @@ const Home = () => {
           <button
             type="button"
             onClick={sendMessage}
-            disabled={!isConnected || !inputMessage.trim()}
+            disabled={!isConnected || !inputMessage.inputText.trim()}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:opacity-50"
           >
             <svg
