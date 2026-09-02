@@ -65,6 +65,17 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Hide scrollbar but keep scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+
 input,
 textarea,
 select {
@@ -83,9 +94,6 @@ textarea {
   overflow-y: auto;
 }
 
-textarea::-webkit-scrollbar {
-  display: none;
-}
 
 .input-box {
   display: flex;
