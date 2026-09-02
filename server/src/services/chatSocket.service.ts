@@ -19,26 +19,38 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         });
       }
 
-      // 1. RAG Context Retrieval
-      sendPayload(ws, { type: "STATUS", status: "SEARCHING_LEGAL_DOCS" });
+      sendPayload(ws, {
+        type: "STATUS",
+        status: "SEARCHING_LEGAL_DOCS",
+        message: "Searching relevant legal documents...",
+      });
+
       const context = await vectorSearch(inputMessage);
 
-      if (context.trim().length === 0) {
-        sendPayload(ws, {
-          type: "STATUS",
-          status: "NO_RELEVANT_DOCS_FOUND",
-        });
-      }
+      sendPayload(ws, {
+        type: "STATUS",
+        status: "ANALYZING_CONTEXT",
+        message: "Analyzing relevant information...",
+      });
 
-      // 2. Generate Response
-      sendPayload(ws, { type: "STATUS", status: "GENERATING_RESPONSE" });
+      sendPayload(ws, {
+        type: "STATUS",
+        status: "GENERATING_RESPONSE",
+        message: "Preparing your answer...",
+      });
+
       const finalResponse = await aiSearch(context, inputMessage);
 
-      // 3. Send Final Response
-      sendPayload(ws, { type: "FINAL_RESPONSE", data: finalResponse });
+      sendPayload(ws, {
+        type: "FINAL_RESPONSE",
+        data: finalResponse,
+      });
 
-      // 4. Complete Stage
-      sendPayload(ws, { type: "DONE" });
+      sendPayload(ws, {
+        type: "STATUS",
+        status: "COMPLETED",
+        message: "Done",
+      });
     } catch (error: any) {
       console.error("[ChatSocket Service Error]:", error);
       if (ws.readyState === WebSocket.OPEN) {
