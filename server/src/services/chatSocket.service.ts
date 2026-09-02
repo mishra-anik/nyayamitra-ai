@@ -25,7 +25,7 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         message: "Searching relevant legal documents...",
       });
 
-      
+
       const context = await vectorSearch(inputMessage);
 
       sendPayload(ws, {
@@ -45,6 +45,7 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
       sendPayload(ws, {
         type: "FINAL_RESPONSE",
         data: finalResponse,
+        role: "assistant",
       });
 
       sendPayload(ws, {
