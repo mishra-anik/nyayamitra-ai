@@ -86,7 +86,7 @@ const Home = () => {
 
   const LINE_HEIGHT = 20;
 
-  const handleInput = (e) => {
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
 
     const textarea = e.target;
