@@ -4,12 +4,19 @@ import mainRagRouter from "./router/mainRag.route.js";
 
 const app = express();
 
-// Middleware
 app.use(express.json());
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  return res.json({
+// Root route
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    status: 200,
+    message: "NyayaMitra API is running",
+  });
+});
+
+// Health check
+app.get("/health", (_req, res) => {
+  res.status(200).json({
     status: 200,
     message: "Server is running",
   });
