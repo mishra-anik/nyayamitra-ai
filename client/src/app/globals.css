@@ -1,12 +1,134 @@
 @import "tailwindcss";
 
-
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --background: #f6f5f1;
+  --foreground: #24302f;
+  --surface: #ffffff;
+  --surface-muted: #efeee9;
+  --primary: #355c5a;
+  --primary-hover: #294a48;
+  --accent: #b08d57;
+  --text: #56615f;
+  --muted: #89918f;
+  --border: #dcdcd7;
 }
 
+@theme {
+  /* Colors */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
 
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+
+  --color-heading: var(--foreground);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+}
+
+.dark {
+  --background: #1d2423;
+  --foreground: #edf1ef;
+  --surface: #252e2c;
+  --surface-muted: #2c3634;
+  --primary: #82aaa5;
+  --primary-hover: #9bbcb8;
+  --accent: #c4a56d;
+  --text: #c2cbc8;
+  --muted: #8f9a97;
+  --border: #3a4543;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  --webkit-scrollbar: none;
+}
+
+body {
+  margin: 0;
+  height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+  text-rendering: optimizeLegibility;
+}
+
+input,
+textarea,
+select {
+  outline: none;
+  /* padding: 12px 16px; */
+  color: #111827;
+  font-size: 15px;
+  line-height: 20px;
+  box-sizing: border-box;
+  scrollbar-width: none;
+}
+
+textarea {
+  resize: none;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+textarea::-webkit-scrollbar {
+  display: none;
+}
+
+.input-box {
+  display: flex;
+  gap: 0.5em;
+  justify-content: space-between;
+  align-items: center;
+  /* min-height: 6rem; */
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: rgba(231, 228, 228, 0.842);
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.input-box:active {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+button {
+  cursor: pointer;
+  border-radius: 100%;
+  padding: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+
+::selection {
+  background: rgb(53 92 90 / 18%);
+}
+
+:focus-visible {
+}

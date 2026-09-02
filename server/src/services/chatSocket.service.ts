@@ -9,10 +9,10 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
   ws.on("message", async (rawMessage: Buffer) => {
     try {
       const payload = JSON.parse(rawMessage.toString());
-      const { text } = payload;
+      const { inputMessage } = payload;
 
       // Validate input
-      if (!text || text.trim() === "") {
+      if (!inputMessage || inputMessage.trim() === "") {
         return sendPayload(ws, {
           type: "ERROR",
           message: "Query text is required.",
@@ -21,18 +21,18 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
 
       // 1. RAG Context Retrieval
       sendPayload(ws, { type: "STATUS", status: "SEARCHING_LEGAL_DOCS" });
-      const context = await vectorSearch(text);
+      const context = await vectorSearch(inputMessage);
 
-      if (!context || context.trim().length === 0) {
-        return sendPayload(ws, {
-          type: "ERROR",
-          message: "No relevant legal context found.",
+      if (context.trim().length === 0) {
+        sendPayload(ws, {
+          type: "STATUS",
+          status: "NO_RELEVANT_DOCS_FOUND",
         });
       }
 
       // 2. Generate Response
       sendPayload(ws, { type: "STATUS", status: "GENERATING_RESPONSE" });
-      const finalResponse = await aiSearch(context, text);
+      const finalResponse = await aiSearch(context, inputMessage);
 
       // 3. Send Final Response
       sendPayload(ws, { type: "FINAL_RESPONSE", data: finalResponse });

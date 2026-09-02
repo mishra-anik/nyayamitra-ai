@@ -73,9 +73,9 @@ export const legalPrompt = ChatPromptTemplate.fromMessages([
 export const aiSearch = async (
   context: string,
   query: string,
-  onPartialObject?: (partialObject: LegalResponse) => void,
 ): Promise<LegalResponse> => {
-  console.log("Context length:", context.length);
+  console.log("Context length:", context.length ,context);
+
 
   const chain = legalPrompt.pipe(structuredLlm);
   const finalResponse = await chain.invoke({ context, query });
