@@ -52,43 +52,15 @@ export const vectorEmbed = async (documents: Document[]): Promise<void> => {
 /**
  * Searches for relevant legal documents based on a query
  */
-// export const vectorSearch = async (query: string): Promise<string> => {
-//   const retriever = vectorStore.asRetriever({
-//     k: 3,
-//     searchType: "similarity",
-//   });
+export const vectorSearch = async (query: string): Promise<string> => {
+  const retriever = vectorStore.asRetriever({
+    k: 5,
+    searchType: "similarity",
+  });
 
-//   const results = await retriever.invoke(query);
-//   const retrievedData = results
-//     .map((doc, index) => `DOCUMENT ${index + 1}:\n${doc.pageContent}`)
-//     .join("\n---\n");
-
-//   return retrievedData;
-// };
-
-export const vectorSearch = async (query: string) => {
-  const results = await vectorStore.similaritySearchWithScore(query, 3);
-
-  const bestScore = results[0]?.[1];
-
-  console.log("Best score:", bestScore);
-
-  if (bestScore === undefined) {
-    return "";
-  }
-
-  if (bestScore < 0.7) {
-    console.log("No sufficiently relevant documents");
-    return "";
-  }
-
+  const results = await retriever.invoke(query);
   const retrievedData = results
-    .map(
-      ([doc, score], index) =>
-        `DOCUMENT ${index + 1}:
-Score: ${score}
-${doc.pageContent}`,
-    )
+    .map((doc, index) => `DOCUMENT ${index + 1}:\n${doc.pageContent}`)
     .join("\n---\n");
 
   return retrievedData;

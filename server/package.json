@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node dist/server/server.js",
-    "clean": "rimraf dist"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
