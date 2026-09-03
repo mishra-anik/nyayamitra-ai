@@ -7,6 +7,7 @@ import {
   setConnected,
   setChatStatus,
   setChatStatusMessage,
+  setShowDocumentInput,
 } from "@/redux/slices/chatSlice";
 import HeroText from "@/components/HeroText";
 import InputBox from "@/components/InputBox";
@@ -23,7 +24,12 @@ const Home = () => {
   const chatStatusMessage = useAppSelector(
     (state) => state.chat.chatStatusMessage,
   );
+  const  selectedImage = useAppSelector((state)=>state.chat.selectedImage)
+  
   const activeChatId = useAppSelector((state) => state.chat.activeChatId);
+  const showDocumentInput = useAppSelector(
+    (state) => state.chat.showDocumentInput,
+  );
 
   useEffect(() => {
     const socket = connectWebSocket();
@@ -80,9 +86,15 @@ const Home = () => {
 
   return (
     <main className="flex h-[100dvh] w-full flex-col px-4 py-2">
+      {showDocumentInput && (
+        <div
+          className="absolute w-full h-full inset-0 z-40 "
+          onClick={() => dispatch(setShowDocumentInput(false))}
+        />
+      )}
       {/* ================= MESSAGE AREA ================= */}
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden scrollbar-hide">
-        {messages.length === 0 ? (
+        {messages.length === 0 && selectedImage===null ? (
           <div className="flex flex-1 items-center justify-center">
             <HeroText />
           </div>

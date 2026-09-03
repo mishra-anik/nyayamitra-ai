@@ -1,12 +1,17 @@
 "use client";
+
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import DocumentInputBox from "@/components/DocumentInputBox";
 import {
   addMessage,
   setActiveChatId,
   setInputMessage,
+  setShowDocumentInput,
+  setSelectedDocument,
+  setSelectedImage,
 } from "@/redux/slices/chatSlice";
 import { useState } from "react";
+import Image from "next/image";
 
 const InputBox = ({
   socketRef,
@@ -18,7 +23,13 @@ const InputBox = ({
   const isConnected = useAppSelector((state) => state.chat.isconnected);
   const inputMessage = useAppSelector((state) => state.chat.inputMessage);
   const messages = useAppSelector((state) => state.chat.messages);
-const [showDocumentInput, setShowDocumentInput] = useState(false);
+  const showDocumentInput = useAppSelector(
+    (state) => state.chat.showDocumentInput,
+  );
+  const selectedImage = useAppSelector((state) => state.chat.selectedImage);
+  const selectedDocument = useAppSelector(
+    (state) => state.chat.selectedDocument,
+  );
 
   const LINE_HEIGHT = 20;
 
@@ -80,19 +91,40 @@ const [showDocumentInput, setShowDocumentInput] = useState(false);
     ${messages.length === 0 ? "md:-translate-y-[15em]" : ""}
   `}
     >
+      <div className="fixed bottom-[6em] md:bottom-[5em] z-50 flex flex-col md:flex-row items-center gap-2 rounded-xl bg-color-primary/10 p-2">
+        {showDocumentInput && <DocumentInputBox />}
+
+        {selectedImage && (
+          <div className="relative md:h-[7em] h-[9em] w-[5em] shrink-0 overflow-hidden rounded-lg">
+            <Image
+              src={selectedImage}
+              alt="Selected image"
+              fill
+              className="object-cover"
+            />
+
+            <button
+              type="button"
+              className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-black/60 text-xs text-white"
+              onClick={() => {
+                dispatch(setSelectedImage(null));
+                localStorage.removeItem("selectedImage");
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="input-box ">
         {/* Plus button */}
 
-        {showDocumentInput && (
-          <DocumentInputBox
-           
-          />
-        )}
         <button
           type="button"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
           onClick={() => {
-            setShowDocumentInput(true);
+            dispatch(setShowDocumentInput(!showDocumentInput));
           }}
         >
           <svg
@@ -152,7 +184,5 @@ const [showDocumentInput, setShowDocumentInput] = useState(false);
     </div>
   );
 };
-
-
 
 export default InputBox;

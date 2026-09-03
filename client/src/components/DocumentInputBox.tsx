@@ -1,20 +1,69 @@
+"use client";
+
 import React from "react";
-import { useState, useRef } from "react";
+import { useRef } from "react";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import {
+  setSelectedDocument,
+  setSelectedImage,
+} from "@/redux/slices/chatSlice";
 const DocumentInputBox = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const dispatch = useAppDispatch();
+  const selectedDocument = useAppSelector(
+    (state) => state.chat.selectedDocument,
+  );
+  const selectedImage = useAppSelector((state) => state.chat.selectedImage);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+
+      const extension = file.name.split(".").pop()?.toLowerCase();
+
+      // PDF, DOC, DOCX
+      if (!["pdf", "doc", "docx"].includes(extension || "")) {
+        alert("Only PDF, DOC, and DOCX files are allowed.");
+        e.target.value = "";
+        return;
+      }
+
+      dispatch(setSelectedDocument(file));
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+
+      // Images only
+      if (!file.type.startsWith("image/")) {
+        alert("Only image files are allowed.");
+        e.target.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        localStorage.setItem("selectedImage", reader.result as string);
+      };
+
+      reader.readAsDataURL(file);
+
+      if (selectedImage) {
+        URL.revokeObjectURL(selectedImage);
+      }
+
+      dispatch(setSelectedImage(URL.createObjectURL(file)));
     }
   };
 
   return (
-    <div className=" fixed w-[5rem] h-auto bottom-[5em] bg-color-primary/10 rounded-lg flex flex-col gap-2 p-2 z-50">
+    <div className=" order-1 md:order-none">
       <div
-        className="mt-2 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center"
+        className="mt-2 mb-4 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center"
         onClick={() => fileInputRef.current?.click()}
       >
         <svg
@@ -41,7 +90,7 @@ const DocumentInputBox = () => {
         />
       </div>
       <div
-        className="mt-2 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center"
+        className="mt-2 mb-4 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center"
         onClick={() => imageInputRef.current?.click()}
       >
         <svg
@@ -64,6 +113,7 @@ const DocumentInputBox = () => {
         <input
           type="file"
           accept="image/*"
+          onChange={handleImageChange}
           ref={imageInputRef}
           className="hidden"
         />

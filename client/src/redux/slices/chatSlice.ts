@@ -16,8 +16,11 @@ interface ChatState {
     | "GENERATING_RESPONSE"
     | "COMPLETED";
   chatStatusMessage: string;
-  activeChatId: string; 
+  activeChatId: string;
   inputMessage: ChatMessage;
+  showDocumentInput: boolean;
+  selectedDocument: File | null;
+  selectedImage: string| null;
 }
 
 type ChatStatus = ChatState["chatStatus"];
@@ -33,6 +36,9 @@ const initialState: ChatState = {
     role: "user",
     chatId: "",
   },
+  showDocumentInput: false,
+  selectedDocument: null,
+  selectedImage: null,
 };
 
 const chatSlice = createSlice({
@@ -59,7 +65,16 @@ const chatSlice = createSlice({
     },
     setInputMessage: (state, action: PayloadAction<ChatMessage>) => {
       state.inputMessage = action.payload;
-    }
+    },
+    setShowDocumentInput: (state, action: PayloadAction<boolean>) => {
+      state.showDocumentInput = action.payload;
+    },
+    setSelectedDocument: (state, action: PayloadAction<File | null>) => {
+      state.selectedDocument = action.payload;
+    },
+    setSelectedImage: (state, action: PayloadAction<string | null>) => {
+      state.selectedImage = action.payload;
+    },
   },
 });
 
@@ -71,5 +86,29 @@ export const {
   setChatStatusMessage,
   setActiveChatId,
   setInputMessage,
+  setShowDocumentInput,
+  setSelectedImage,
+  setSelectedDocument,
 } = chatSlice.actions;
 export default chatSlice.reducer;
+
+
+
+
+// {pdfFile && (
+//   <div className="flex w-fit max-w-[280px] items-center gap-2 rounded-xl border bg-white p-2 shadow-sm">
+//     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-xs font-semibold text-red-600">
+//       PDF
+//     </div>
+
+//     <div className="min-w-0">
+//       <p className="truncate text-sm font-medium">
+//         {pdfFile.name}
+//       </p>
+
+//       <p className="text-xs text-gray-500">
+//         {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+//       </p>
+//     </div>
+//   </div>
+// )}
