@@ -5,11 +5,25 @@ import { aiSearch } from "./ai.service.js";
 /**
  * Handles incoming WebSocket connections and processes chat messages
  */
+
+interface DocumentPayload {
+  name: string;
+  size: number;
+  type: "pdf" | "doc" | "docx";
+  data: string;
+}
+
+interface PayloadType {
+  inputMessage?: string;
+  image?: string | null;
+  document?: DocumentPayload | null;
+}
+
 export const handleChatSocketConnection = (ws: WebSocket): void => {
   ws.on("message", async (rawMessage: Buffer) => {
     try {
-      const payload = JSON.parse(rawMessage.toString());
-      const { inputMessage } = payload;
+      const payload: PayloadType = JSON.parse(rawMessage.toString());
+      const { inputMessage, image, document } = payload;
 
       // Validate input
       if (!inputMessage || inputMessage.trim() === "") {
@@ -24,7 +38,6 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         status: "SEARCHING_LEGAL_DOCS",
         message: "Searching relevant legal documents...",
       });
-
 
       const context = await vectorSearch(inputMessage);
 
@@ -63,6 +76,16 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
       }
     }
   });
+};
+
+const getDataUrlByteLength = (dataUrl: string): number => {
+  const base64Data = dataUrl.split(",", 2)[1];
+
+  if (!base64Data) {
+    return 0;
+  }
+
+  return Math.floor((base64Data.replace(/=+$/, "").length * 3) / 4);
 };
 
 /**

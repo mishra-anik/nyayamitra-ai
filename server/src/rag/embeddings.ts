@@ -40,7 +40,7 @@ export const vectorEmbed = async (documents: Document[]): Promise<void> => {
   );
 
   // Process documents in batches
-  for (let i = 940; i < validDocuments.length; i += BATCH_SIZE) {
+  for (let i = 0; i < validDocuments.length; i += BATCH_SIZE) {
     const batch = validDocuments.slice(i, i + BATCH_SIZE);
     console.log(`Processing documents ${i} - ${i + batch.length - 1}`);
     await vectorStore.addDocuments(batch);
