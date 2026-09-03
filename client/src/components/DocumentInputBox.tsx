@@ -6,16 +6,16 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   setSelectedDocument,
   setSelectedImage,
+  setShowDocumentInput,
 } from "@/redux/slices/chatSlice";
 const DocumentInputBox = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dispatch = useAppDispatch();
+  const selectedImage = useAppSelector((state) => state.chat.selectedImage);
   const selectedDocument = useAppSelector(
     (state) => state.chat.selectedDocument,
   );
-  const selectedImage = useAppSelector((state) => state.chat.selectedImage);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -29,7 +29,36 @@ const DocumentInputBox = () => {
         return;
       }
 
-      dispatch(setSelectedDocument(file));
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          localStorage.setItem(
+            "selectedDocument",
+            JSON.stringify({
+              name: file.name,
+              size: file.size,
+              type: extension,
+              data: reader.result,
+            }),
+          );
+          if (selectedDocument) {
+            dispatch(setSelectedDocument(null));
+          }
+          dispatch(
+            setSelectedDocument({
+              name: file.name,
+              size: file.size,
+              type: extension as "pdf" | "doc" | "docx",
+            }),
+          );
+        } catch {
+          alert("This document is too large to store in browser storage.");
+        } finally {
+          dispatch(setShowDocumentInput(false));
+        }
+      };
+
+      reader.readAsDataURL(file);
     }
   };
 
@@ -45,7 +74,6 @@ const DocumentInputBox = () => {
       }
 
       const reader = new FileReader();
-
       reader.onload = () => {
         localStorage.setItem("selectedImage", reader.result as string);
       };
@@ -58,10 +86,11 @@ const DocumentInputBox = () => {
 
       dispatch(setSelectedImage(URL.createObjectURL(file)));
     }
+    dispatch(setShowDocumentInput(false));
   };
 
   return (
-    <div className=" order-1 md:order-none">
+    <div>
       <div
         className="mt-2 mb-4 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center"
         onClick={() => fileInputRef.current?.click()}

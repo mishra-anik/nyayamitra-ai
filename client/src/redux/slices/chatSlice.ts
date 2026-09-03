@@ -6,6 +6,12 @@ export interface ChatMessage {
   chatId?: string;
 }
 
+export interface DocumentDetails {
+  name: string;
+  size: number;
+  type: "pdf" | "doc" | "docx";
+}
+
 interface ChatState {
   messages: ChatMessage[];
   isconnected: boolean;
@@ -19,7 +25,7 @@ interface ChatState {
   activeChatId: string;
   inputMessage: ChatMessage;
   showDocumentInput: boolean;
-  selectedDocument: File | null;
+  selectedDocument: DocumentDetails | null;
   selectedImage: string| null;
 }
 
@@ -69,7 +75,10 @@ const chatSlice = createSlice({
     setShowDocumentInput: (state, action: PayloadAction<boolean>) => {
       state.showDocumentInput = action.payload;
     },
-    setSelectedDocument: (state, action: PayloadAction<File | null>) => {
+    setSelectedDocument: (
+      state,
+      action: PayloadAction<DocumentDetails | null>,
+    ) => {
       state.selectedDocument = action.payload;
     },
     setSelectedImage: (state, action: PayloadAction<string | null>) => {

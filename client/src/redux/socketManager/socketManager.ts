@@ -18,7 +18,7 @@ const getWebSocket = (): WebSocket => {
   if (!socket) {
     throw new Error("WebSocket is not connected.");
   }
-    return socket;
+  return socket;
 };
 
 const disconnectWebSocket = () => {

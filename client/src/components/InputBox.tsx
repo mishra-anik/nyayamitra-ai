@@ -54,10 +54,20 @@ const InputBox = ({
 
   const sendMessage = () => {
     const chatId = crypto.randomUUID();
+    const storedDocument = localStorage.getItem("selectedDocument");
+    const storedImage = localStorage.getItem("selectedImage");
 
-    if (socketRef.current && isConnected && inputMessage.inputText.trim()) {
+    if (
+      socketRef.current &&
+      isConnected &&
+      (inputMessage.inputText.trim() || storedDocument || storedImage)
+    ) {
       socketRef.current.send(
-        JSON.stringify({ inputMessage: inputMessage.inputText }),
+        JSON.stringify({
+          inputMessage: inputMessage.inputText,
+          image: storedImage,
+          document: storedDocument ? JSON.parse(storedDocument) : null,
+        }),
       );
       dispatch(addMessage({ ...inputMessage, chatId }));
       dispatch(setActiveChatId(chatId));
@@ -70,6 +80,13 @@ const InputBox = ({
         }),
       );
 
+      //clear selected file
+      dispatch(setSelectedDocument(null));
+      dispatch(setSelectedImage(null));
+
+      localStorage.removeItem("selectedDocument");
+      localStorage.removeItem("selectedImage");
+      
       setRowsNum(1);
     }
   };
@@ -77,10 +94,7 @@ const InputBox = ({
   return (
     <div
       className={`
-    fixed bottom-[1em] left-0 right-0
-    z-50
-    bg-background
-    px-4 pb-3 pt-2
+    fixed bottom-[1em] left-0 right-0 z-50 bg-background px-4 pb-3 pt-2
     md:static
     md:mx-auto
     md:w-full
@@ -88,14 +102,22 @@ const InputBox = ({
     md:bg-transparent
     md:px-0
     md:pb-2
-    ${messages.length === 0 ? "md:-translate-y-[15em]" : ""}
+    ${messages.length === 0 && selectedImage === null && selectedDocument === null ? "md:-translate-y-[15em]" : ""}
   `}
     >
-      <div className="fixed bottom-[6em] md:bottom-[5em] z-50 flex flex-col md:flex-row items-center gap-2 rounded-xl bg-color-primary/10 p-2">
-        {showDocumentInput && <DocumentInputBox />}
+      <div className="fixed bottom-[6em] md:bottom-[5em] z-50 flex   items-center gap-2 rounded-xl  p-2 transition ease-in">
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-in-out ${
+            showDocumentInput
+              ? "max-h-40 max-w-xs translate-y-0 opacity-100"
+              : "pointer-events-none max-h-0 max-w-0 -translate-y-2 opacity-0"
+          }`}
+        >
+          <DocumentInputBox />
+        </div>
 
         {selectedImage && (
-          <div className="relative md:h-[7em] h-[9em] w-[5em] shrink-0 overflow-hidden rounded-lg">
+          <div className="relative md:h-[7em] h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg">
             <Image
               src={selectedImage}
               alt="Selected image"
@@ -109,6 +131,32 @@ const InputBox = ({
               onClick={() => {
                 dispatch(setSelectedImage(null));
                 localStorage.removeItem("selectedImage");
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {selectedDocument && (
+          <div className="relative flex flex-col items-center justify-center gap-2 md:h-[7em] h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg border bg-primary/10">
+            <div className="flex h-auto px-4 py-2 w-auto shrink-0 items-center justify-center rounded-lg bg-red-50 text-xs font-semibold text-red-600">
+              {selectedDocument.type}
+            </div>
+
+            {/* <div className="min-w-0"> */}
+            <p className="w-auto px-2 text-sm font-medium">
+              {selectedDocument.name}
+            </p>
+            <p className="text-xs text-gray-500">
+              {(selectedDocument.size / 1024 / 1024).toFixed(2)} MB
+            </p>
+            <button
+              type="button"
+              className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-black/60 text-xs text-white"
+              onClick={() => {
+                dispatch(setSelectedDocument(null));
+                localStorage.removeItem("selectedDocument");
               }}
             >
               ×
@@ -162,7 +210,12 @@ const InputBox = ({
         <button
           type="button"
           onClick={sendMessage}
-          disabled={!isConnected || !inputMessage.inputText.trim()}
+          disabled={
+            !isConnected ||
+            (!inputMessage.inputText.trim() &&
+              !selectedImage &&
+              !selectedDocument)
+          }
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:opacity-50"
         >
           <svg

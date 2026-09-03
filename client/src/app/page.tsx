@@ -24,8 +24,10 @@ const Home = () => {
   const chatStatusMessage = useAppSelector(
     (state) => state.chat.chatStatusMessage,
   );
-  const  selectedImage = useAppSelector((state)=>state.chat.selectedImage)
-  
+  const selectedImage = useAppSelector((state) => state.chat.selectedImage);
+  const selectedDocument = useAppSelector(
+    (state) => state.chat.selectedDocument,
+  );
   const activeChatId = useAppSelector((state) => state.chat.activeChatId);
   const showDocumentInput = useAppSelector(
     (state) => state.chat.showDocumentInput,
@@ -82,7 +84,7 @@ const Home = () => {
     return () => {
       disconnectWebSocket();
     };
-  }, [dispatch]);
+  }, []);
 
   return (
     <main className="flex h-[100dvh] w-full flex-col px-4 py-2">
@@ -94,7 +96,9 @@ const Home = () => {
       )}
       {/* ================= MESSAGE AREA ================= */}
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden scrollbar-hide">
-        {messages.length === 0 && selectedImage===null ? (
+        {messages.length === 0 &&
+        selectedImage === null &&
+        selectedDocument === null ? (
           <div className="flex flex-1 items-center justify-center">
             <HeroText />
           </div>
