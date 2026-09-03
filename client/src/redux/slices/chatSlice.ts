@@ -17,6 +17,7 @@ interface ChatState {
     | "COMPLETED";
   chatStatusMessage: string;
   activeChatId: string; 
+  inputMessage: ChatMessage;
 }
 
 type ChatStatus = ChatState["chatStatus"];
@@ -27,6 +28,11 @@ const initialState: ChatState = {
   chatStatus: "IDLE",
   chatStatusMessage: "",
   activeChatId: "",
+  inputMessage: {
+    inputText: "",
+    role: "user",
+    chatId: "",
+  },
 };
 
 const chatSlice = createSlice({
@@ -51,6 +57,9 @@ const chatSlice = createSlice({
     setActiveChatId: (state, action: PayloadAction<string>) => {
       state.activeChatId = action.payload;
     },
+    setInputMessage: (state, action: PayloadAction<ChatMessage>) => {
+      state.inputMessage = action.payload;
+    }
   },
 });
 
@@ -61,5 +70,6 @@ export const {
   setChatStatus,
   setChatStatusMessage,
   setActiveChatId,
+  setInputMessage,
 } = chatSlice.actions;
 export default chatSlice.reducer;
