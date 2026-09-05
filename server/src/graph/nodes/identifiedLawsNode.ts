@@ -68,7 +68,5 @@ ${state.documentText?.trim() || "None"}
 
   const res = await structuredLlm.invoke(prompt);
 
-  console.log("ide law", res);
-
   return { identifiedLaws: res };
 };

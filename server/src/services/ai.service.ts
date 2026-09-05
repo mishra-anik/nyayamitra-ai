@@ -83,7 +83,6 @@ export const aiSearch = async (
   context: string,
   query: string,
 ): Promise<LegalResponse> => {
-  console.log("Context length:", context.length ,context);
 
 
   const chain = legalPrompt.pipe(structuredLlm);

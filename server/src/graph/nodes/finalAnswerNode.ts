@@ -17,7 +17,5 @@ export const finalResponse = async (state: LegalStateType) => {
 
     const response = await aiSearch(context, state.inputMessage);
 
-    console.log(response.directAnswer)
-
     return { finalAnswer: JSON.stringify(response) };
 };

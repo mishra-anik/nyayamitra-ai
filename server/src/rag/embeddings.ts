@@ -28,8 +28,6 @@ const BATCH_SIZE = 20;
  * Embeds documents into the vector store in batches
  */
 export const vectorEmbed = async (documents: Document[]): Promise<void> => {
-  console.log("Embedding documents...");
-  console.log(`Total documents to process: ${documents.length}`);
 
   // Filter out invalid documents
   const validDocuments = documents.filter(
@@ -42,11 +40,9 @@ export const vectorEmbed = async (documents: Document[]): Promise<void> => {
   // Process documents in batches
   for (let i = 990; i < validDocuments.length; i += BATCH_SIZE) {
     const batch = validDocuments.slice(i, i + BATCH_SIZE);
-    console.log(`Processing documents ${i} - ${i + batch.length - 1}`);
     await vectorStore.addDocuments(batch);
   }
 
-  console.log("Documents embedded successfully");
 };
 
 /**

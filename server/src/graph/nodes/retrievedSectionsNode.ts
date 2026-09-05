@@ -52,8 +52,6 @@ ${doc.pageContent}`,
     )
     .join("\n---\n");
 
-  console.log("Retrieved sections:", formattedDocuments);
-
   return {
     retrievedSections: formattedDocuments,
   };
