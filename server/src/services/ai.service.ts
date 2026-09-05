@@ -11,35 +11,44 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 export const LegalResponseSchema = z.object({
-  directAnswer: z
-    .string()
-    .trim()
-    .min(10, "Direct answer must be detailed")
-    .describe("Clear and concise 1-20 sentence direct answer to the question"),
+ directAnswer: z
+  .string()
+  .trim()
+  .min(10, "Please provide a clear answer")
+  .describe(
+    "Give a clear, direct answer to the legal question in simple language. Keep it concise and answer the question first."
+  ),
 
-  relevantLegalProvision: z
-    .string()
-    .trim()
-    .describe("The specific Act, Section, or Rule applicable"),
+relevantLegalProvision: z
+  .string()
+  .trim()
+  .describe(
+    "Mention the relevant law, Act, section, rule, or legal provision that applies to the answer. Include the section number when available."
+  ),
 
-  explanation: z
-    .string()
-    .trim()
-    .min(20, "Explanation must provide sufficient context")
-    .describe("Detailed explanation strictly based on the provided documents"),
+explanation: z
+  .string()
+  .trim()
+  .min(20, "Please provide a clear explanation")
+  .describe(
+    "Explain the answer in simple, lawyer-friendly language. Use only the information available in the provided documents. Do not add unsupported legal information."
+  ),
 
-  practicalImplications: z
-    .string()
-    .trim()
-    .default("No specific practical implications noted in context.")
-    .describe("Practical summary or operational context"),
+practicalImplications: z
+  .string()
+  .trim()
+  .default("No specific practical implications noted in the provided context.")
+  .describe(
+    "Explain what this means in practical legal practice, such as how a lawyer may use the provision, what to check, or what issue may arise in a case."
+  ),
 
-  insufficientInformation: z
-    .boolean()
-    .default(false)
-    .describe(
-      "Set to true if the context does not contain enough information to answer",
-    ),
+insufficientInformation: z
+  .boolean()
+  .default(false)
+  .describe(
+    "Set to true when the provided documents do not contain enough information to answer the question reliably. Set to false when the documents provide sufficient information."
+  ),
+
 });
 
 // Infer the TypeScript type from the schema

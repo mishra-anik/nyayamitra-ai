@@ -1,6 +1,6 @@
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { Document } from "@langchain/core/documents";
-import { PGVectorStore } from "@langchain/community/vectorstores/pgvector";
+import { PGVectorStore } from "@langchain/pgvector";
 
 // Initialize embeddings model
 export const embeddings = new GoogleGenerativeAIEmbeddings({
@@ -9,11 +9,11 @@ export const embeddings = new GoogleGenerativeAIEmbeddings({
 });
 
 // Initialize vector store
-const vectorStore = await PGVectorStore.initialize(embeddings, {
+export const vectorStore = await PGVectorStore.initialize(embeddings, {
   postgresConnectionOptions: {
     connectionString: process.env.DATABASE_URL,
   },
-  tableName: "legal_documents_rag",
+  tableName: "criminal_law_rag",
   columns: {
     idColumnName: "id",
     vectorColumnName: "vector",
@@ -22,7 +22,7 @@ const vectorStore = await PGVectorStore.initialize(embeddings, {
   },
 });
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 20;
 
 /**
  * Embeds documents into the vector store in batches
@@ -40,7 +40,7 @@ export const vectorEmbed = async (documents: Document[]): Promise<void> => {
   );
 
   // Process documents in batches
-  for (let i = 0; i < validDocuments.length; i += BATCH_SIZE) {
+  for (let i = 990; i < validDocuments.length; i += BATCH_SIZE) {
     const batch = validDocuments.slice(i, i + BATCH_SIZE);
     console.log(`Processing documents ${i} - ${i + batch.length - 1}`);
     await vectorStore.addDocuments(batch);

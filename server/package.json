@@ -13,27 +13,27 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@langchain/community": "^1.1.29",
-    "@langchain/core": "^1.2.4",
-    "@langchain/google-genai": "^2.2.0",
-    "@langchain/langgraph": "^1.4.8",
+    "@langchain/core": "^1.2.9",
+    "@langchain/google-genai": "^2.3.0",
+    "@langchain/pgvector": "^0.1.0",
     "@langchain/textsplitters": "^1.0.1",
-    "dotenv": "^16.6.1",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "langchain": "^1.5.10",
-    "multer": "^2.2.0",
+    "mammoth": "^1.12.2",
+    "multer": "^2.3.0",
     "pdf-parse": "^2.4.5",
-    "pg": "^8.22.0",
+    "pg": "^8.23.0",
     "pgvector": "^0.3.0",
     "ws": "^8.21.3",
-    "zod": "^3.25.76"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.4.1",
     "@types/ws": "^8.18.1",
-    "tsx": "^4.23.5",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
