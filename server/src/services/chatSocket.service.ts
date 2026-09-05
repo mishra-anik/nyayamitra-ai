@@ -1,6 +1,5 @@
 import { WebSocket } from "ws";
-import { vectorSearch } from "../rag/embeddings.js";
-import { aiSearch } from "./ai.service.js";
+import { legalGraph } from "../graph/graph.js";
 
 /**
  * Handles incoming WebSocket connections and processes chat messages
@@ -25,6 +24,10 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
       const payload: PayloadType = JSON.parse(rawMessage.toString());
       const { inputMessage, image, document } = payload;
 
+      let documentBuffer: Uint8Array | null = null;
+      if (document?.data) {
+        documentBuffer = dataUrlToBuffer(document?.data);
+      }
       // Validate input
       if (!inputMessage || inputMessage.trim() === "") {
         return sendPayload(ws, {
@@ -33,31 +36,47 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         });
       }
 
-      sendPayload(ws, {
-        type: "STATUS",
-        status: "SEARCHING_LEGAL_DOCS",
-        message: "Searching relevant legal documents...",
+      const graphInput = {
+        inputMessage,
+        image: image ?? null,
+        document: document && documentBuffer
+          ? {
+              fileName: document.name,
+              size: document.size,
+              type: document.type,
+              fileBuffer: documentBuffer,
+            }
+          : null,
+      };
+
+      let finalAnswer = "";
+      const graphStream = await legalGraph.stream(graphInput, {
+        streamMode: "updates",
       });
 
-      const context = await vectorSearch(inputMessage);
+      for await (const update of graphStream) {
+        const [nodeName, nodeState] = Object.entries(update)[0] ?? [];
+        if (!nodeName || !nodeState) {
+          continue;
+        }
 
-      sendPayload(ws, {
-        type: "STATUS",
-        status: "ANALYZING_CONTEXT",
-        message: "Analyzing relevant information...",
-      });
+        const status = getNodeStatus(nodeName);
+        if (status) {
+          sendPayload(ws, {
+            type: "STATUS",
+            status: status.status,
+            message: status.message,
+          });
+        }
 
-      sendPayload(ws, {
-        type: "STATUS",
-        status: "GENERATING_RESPONSE",
-        message: "Preparing your answer...",
-      });
-
-      const finalResponse = await aiSearch(context, inputMessage);
+        if (nodeName === "finalResponse") {
+          finalAnswer = (nodeState as { finalAnswer?: string }).finalAnswer ?? "";
+        }
+      }
 
       sendPayload(ws, {
         type: "FINAL_RESPONSE",
-        data: finalResponse,
+        data: finalAnswer,
         role: "assistant",
       });
 
@@ -78,16 +97,6 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
   });
 };
 
-const getDataUrlByteLength = (dataUrl: string): number => {
-  const base64Data = dataUrl.split(",", 2)[1];
-
-  if (!base64Data) {
-    return 0;
-  }
-
-  return Math.floor((base64Data.replace(/=+$/, "").length * 3) / 4);
-};
-
 /**
  * Sends a JSON payload to the WebSocket if the connection is open
  */
@@ -95,4 +104,43 @@ const sendPayload = (ws: WebSocket, payload: object): void => {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(payload));
   }
+};
+
+const getNodeStatus = (
+  nodeName: string,
+): { status: "SEARCHING_LEGAL_DOCS" | "ANALYZING_CONTEXT" | "GENERATING_RESPONSE"; message: string } | null => {
+  switch (nodeName) {
+    case "parseDocument":
+      return {
+        status: "SEARCHING_LEGAL_DOCS",
+        message: "Reading the provided document...",
+      };
+    case "identifyLaws":
+      return {
+        status: "SEARCHING_LEGAL_DOCS",
+        message: "Identifying the relevant laws...",
+      };
+    case "retrieveSections":
+      return {
+        status: "ANALYZING_CONTEXT",
+        message: "Retrieving relevant legal sections...",
+      };
+    case "finalResponse":
+      return {
+        status: "GENERATING_RESPONSE",
+        message: "Preparing your answer...",
+      };
+    default:
+      return null;
+  }
+};
+
+const dataUrlToBuffer = (dataUrl: string): Uint8Array => {
+  const base64 = dataUrl.split(",", 2)[1];
+
+  if (!base64) {
+    throw new Error("Invalid PDF data");
+  }
+
+  return Buffer.from(base64, "base64");
 };
