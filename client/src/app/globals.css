@@ -144,3 +144,75 @@ textarea::placeholder {
 }
 
 
+/* ========================================
+   Legal Response
+   ======================================== */
+
+.legal-response {
+  width: 100%;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.legal-section {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(36, 48, 47, 0.04);
+}
+
+.legal-section:last-child {
+  margin-bottom: 0;
+}
+
+.legal-section h3 {
+  margin: 0 0 0.4rem;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.legal-section p {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* Legal provision */
+.legal-provision {
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+
+/* Warning / insufficient information */
+.legal-warning {
+  margin-top: 0.75rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--foreground);
+}
+
+.legal-warning strong {
+  color: var(--accent);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .legal-section {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .legal-section h3 {
+    font-size: 0.9rem;
+  }
+
+  .legal-section p {
+    font-size: 0.88rem;
+  }
+}

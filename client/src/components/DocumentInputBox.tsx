@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRef } from "react";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { useAppDispatch } from "@/redux/hooks";
 import {
   setSelectedDocument,
   setSelectedImage,
@@ -12,52 +12,34 @@ const DocumentInputBox = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const dispatch = useAppDispatch();
-  const selectedImage = useAppSelector((state) => state.chat.selectedImage);
-  const selectedDocument = useAppSelector(
-    (state) => state.chat.selectedDocument,
-  );
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
       const extension = file.name.split(".").pop()?.toLowerCase();
 
-      // PDF, DOC, DOCX
-      if (!["pdf", "doc", "docx"].includes(extension || "")) {
-        alert("Only PDF, DOC, and DOCX files are allowed.");
+      // The server currently parses PDF and DOCX files only.
+      if (!["pdf", "docx"].includes(extension || "")) {
+        alert("Only PDF and DOCX files are supported.");
         e.target.value = "";
         return;
       }
 
       const reader = new FileReader();
       reader.onload = () => {
-        try {
-          localStorage.setItem(
-            "selectedDocument",
-            JSON.stringify({
-              name: file.name,
-              size: file.size,
-              type: extension,
-              data: reader.result,
-            }),
-          );
-          if (selectedDocument) {
-            dispatch(setSelectedDocument(null));
-          }
-          dispatch(
-            setSelectedDocument({
-              name: file.name,
-              size: file.size,
-              type: extension as "pdf" | "doc" | "docx",
-            }),
-          );
-        } catch {
-          alert("This document is too large to store in browser storage.");
-        } finally {
-          dispatch(setShowDocumentInput(false));
-        }
-      };
+        const dataUrl = reader.result;
+        if (typeof dataUrl !== "string") return;
 
+        const documentDetails = {
+          name: file.name,
+          type: extension?.toUpperCase() || file.type,
+          size: file.size,
+          dataUrl,
+        };
+
+        dispatch(setSelectedDocument(documentDetails));
+        dispatch(setShowDocumentInput(false));
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -75,24 +57,20 @@ const DocumentInputBox = () => {
 
       const reader = new FileReader();
       reader.onload = () => {
-        localStorage.setItem("selectedImage", reader.result as string);
+        const dataUrl = reader.result;
+        if (typeof dataUrl !== "string") return;
+
+        dispatch(setSelectedImage(dataUrl));
       };
-
       reader.readAsDataURL(file);
-
-      if (selectedImage) {
-        URL.revokeObjectURL(selectedImage);
-      }
-
-      dispatch(setSelectedImage(URL.createObjectURL(file)));
     }
     dispatch(setShowDocumentInput(false));
   };
 
   return (
-    <div>
+    <div className="mb-[1em] rounded-xl border border-border/60 bg-accent/40 p-4 shadow-md backdrop-blur-sm">
       <div
-        className="mt-2 mb-4 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center"
+        className="mt-2 mb-4 flex justify-start gap-2 text-color-primary text-sm cursor-pointer items-center "
         onClick={() => fileInputRef.current?.click()}
       >
         <svg
@@ -108,11 +86,11 @@ const DocumentInputBox = () => {
         >
           <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
         </svg>
-        <h2 className="text-sm text-gray-500">Add Document</h2>
+        <h2 className="text-md text-gray-800">Add Document</h2>
 
         <input
           type="file"
-          accept=".pdf,.doc,.docx"
+          accept=".pdf,.docx"
           onChange={handleFileChange}
           ref={fileInputRef}
           className="hidden"
@@ -137,7 +115,7 @@ const DocumentInputBox = () => {
           <circle cx="8.5" cy="8.5" r="1.5" />
           <path d="m21 15-5-5L5 21" />
         </svg>
-        <h2 className="text-sm text-gray-500">Add Image</h2>
+        <h2 className="text-md text-gray-800">Add Image</h2>
 
         <input
           type="file"

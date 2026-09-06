@@ -4,17 +4,20 @@ export interface ChatMessage {
   inputText: string;
   role: "user" | "assistant";
   chatId?: string;
+  image?: string | null;
+  document?: FileDetails | null;
 }
 
-export interface DocumentDetails {
+export interface FileDetails {
   name: string;
+  type: string;
   size: number;
-  type: "pdf" | "doc" | "docx";
+  dataUrl: string;
 }
 
 interface ChatState {
   messages: ChatMessage[];
-  isconnected: boolean;
+  isConnected: boolean;
   chatStatus:
     | "IDLE"
     | "SEARCHING_LEGAL_DOCS"
@@ -25,15 +28,15 @@ interface ChatState {
   activeChatId: string;
   inputMessage: ChatMessage;
   showDocumentInput: boolean;
-  selectedDocument: DocumentDetails | null;
-  selectedImage: string| null;
+  selectedDocument: FileDetails | null;
+  selectedImage: string | null;
 }
 
 type ChatStatus = ChatState["chatStatus"];
 
 const initialState: ChatState = {
   messages: [],
-  isconnected: false,
+  isConnected: false,
   chatStatus: "IDLE",
   chatStatusMessage: "",
   activeChatId: "",
@@ -58,7 +61,7 @@ const chatSlice = createSlice({
       state.messages = [];
     },
     setConnected: (state, action: PayloadAction<boolean>) => {
-      state.isconnected = action.payload;
+      state.isConnected= action.payload;
     },
     setChatStatus: (state, action: PayloadAction<ChatStatus>) => {
       state.chatStatus = action.payload;
@@ -75,12 +78,10 @@ const chatSlice = createSlice({
     setShowDocumentInput: (state, action: PayloadAction<boolean>) => {
       state.showDocumentInput = action.payload;
     },
-    setSelectedDocument: (
-      state,
-      action: PayloadAction<DocumentDetails | null>,
-    ) => {
+    setSelectedDocument: (state, action: PayloadAction<FileDetails | null>) => {
       state.selectedDocument = action.payload;
     },
+
     setSelectedImage: (state, action: PayloadAction<string | null>) => {
       state.selectedImage = action.payload;
     },
@@ -100,24 +101,3 @@ export const {
   setSelectedDocument,
 } = chatSlice.actions;
 export default chatSlice.reducer;
-
-
-
-
-// {pdfFile && (
-//   <div className="flex w-fit max-w-[280px] items-center gap-2 rounded-xl border bg-white p-2 shadow-sm">
-//     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-xs font-semibold text-red-600">
-//       PDF
-//     </div>
-
-//     <div className="min-w-0">
-//       <p className="truncate text-sm font-medium">
-//         {pdfFile.name}
-//       </p>
-
-//       <p className="text-xs text-gray-500">
-//         {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
-//       </p>
-//     </div>
-//   </div>
-// )}

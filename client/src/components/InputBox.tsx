@@ -5,6 +5,7 @@ import DocumentInputBox from "@/components/DocumentInputBox";
 import {
   addMessage,
   setActiveChatId,
+  setChatStatus,
   setInputMessage,
   setShowDocumentInput,
   setSelectedDocument,
@@ -20,7 +21,8 @@ const InputBox = ({
 }) => {
   const [rowsNum, setRowsNum] = useState<number>(1);
   const dispatch = useAppDispatch();
-  const isConnected = useAppSelector((state) => state.chat.isconnected);
+  const isConnected = useAppSelector((state) => state.chat.isConnected);
+  const chatStatus = useAppSelector((state) => state.chat.chatStatus);
   const inputMessage = useAppSelector((state) => state.chat.inputMessage);
   const messages = useAppSelector((state) => state.chat.messages);
   const showDocumentInput = useAppSelector(
@@ -53,42 +55,61 @@ const InputBox = ({
   };
 
   const sendMessage = () => {
-    const chatId = crypto.randomUUID();
-    const storedDocument = localStorage.getItem("selectedDocument");
-    const storedImage = localStorage.getItem("selectedImage");
+    const message = inputMessage.inputText.trim();
+    const socket = socketRef.current;
 
     if (
-      socketRef.current &&
-      isConnected &&
-      (inputMessage.inputText.trim() || storedDocument || storedImage)
+      !message ||
+      (chatStatus !== "IDLE" && chatStatus !== "COMPLETED") ||
+      !socket ||
+      socket.readyState !== WebSocket.OPEN
     ) {
-      socketRef.current.send(
-        JSON.stringify({
-          inputMessage: inputMessage.inputText,
-          image: storedImage,
-          document: storedDocument ? JSON.parse(storedDocument) : null,
-        }),
-      );
-      dispatch(addMessage({ ...inputMessage, chatId }));
-      dispatch(setActiveChatId(chatId));
-
-      dispatch(
-        setInputMessage({
-          inputText: "",
-          role: "user",
-          chatId: "",
-        }),
-      );
-
-      //clear selected file
-      dispatch(setSelectedDocument(null));
-      dispatch(setSelectedImage(null));
-
-      localStorage.removeItem("selectedDocument");
-      localStorage.removeItem("selectedImage");
-      
-      setRowsNum(1);
+      return;
     }
+
+    const chatId = crypto.randomUUID();
+    const userMessage = {
+      inputText: message,
+      role: "user" as const,
+      chatId,
+      ...(selectedImage ? { image: selectedImage } : {}),
+      ...(selectedDocument ? { document: selectedDocument } : {}),
+    };
+
+    dispatch(addMessage(userMessage));
+    dispatch(setActiveChatId(chatId));
+    dispatch(setChatStatus("GENERATING_RESPONSE"));
+
+    const payload: {
+      inputMessage: string;
+      image?: string;
+      document?: {
+        name: string;
+        size: number;
+        type: string;
+        data: string;
+      };
+    } = { inputMessage: message };
+
+    if (selectedImage) {
+      payload.image = selectedImage;
+    }
+
+    if (selectedDocument) {
+      payload.document = {
+        name: selectedDocument.name,
+        size: selectedDocument.size,
+        type: selectedDocument.type.toLowerCase(),
+        data: selectedDocument.dataUrl,
+      };
+    }
+
+    socket.send(JSON.stringify(payload));
+
+    dispatch(setInputMessage({ ...inputMessage, inputText: "" }));
+    dispatch(setSelectedImage(null));
+    dispatch(setSelectedDocument(null));
+    dispatch(setShowDocumentInput(false));
   };
 
   return (
@@ -117,7 +138,7 @@ const InputBox = ({
         </div>
 
         {selectedImage && (
-          <div className="relative md:h-[7em] h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg">
+          <div className="relative md:h-[7em] h-[9em] w-[8em] shrink-0 overflow-hidden rounded-lg">
             <Image
               src={selectedImage}
               alt="Selected image"
@@ -130,7 +151,6 @@ const InputBox = ({
               className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-black/60 text-xs text-white"
               onClick={() => {
                 dispatch(setSelectedImage(null));
-                localStorage.removeItem("selectedImage");
               }}
             >
               ×
@@ -139,7 +159,7 @@ const InputBox = ({
         )}
 
         {selectedDocument && (
-          <div className="relative flex flex-col items-center justify-center gap-2 md:h-[7em] h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg border bg-primary/10">
+          <div className=" relative mt-2 flex w-[13em] flex-col items-center gap-2 rounded-lg border bg-accent/80 px-3 py-4 text-center mb-[1em]">
             <div className="flex h-auto px-4 py-2 w-auto shrink-0 items-center justify-center rounded-lg bg-red-50 text-xs font-semibold text-red-600">
               {selectedDocument.type}
             </div>
@@ -156,7 +176,6 @@ const InputBox = ({
               className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-black/60 text-xs text-white"
               onClick={() => {
                 dispatch(setSelectedDocument(null));
-                localStorage.removeItem("selectedDocument");
               }}
             >
               ×
@@ -212,10 +231,15 @@ const InputBox = ({
           onClick={sendMessage}
           disabled={
             !isConnected ||
-            (!inputMessage.inputText.trim() &&
-              !selectedImage &&
-              !selectedDocument)
+            (chatStatus !== "IDLE" && chatStatus !== "COMPLETED") ||
+            !inputMessage.inputText.trim()
           }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && inputMessage.inputText) {
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:opacity-50"
         >
           <svg

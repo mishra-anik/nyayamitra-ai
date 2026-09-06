@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import DOMPurify from "dompurify";
 import {
   addMessage,
   setConnected,
@@ -11,10 +13,7 @@ import {
 } from "@/redux/slices/chatSlice";
 import HeroText from "@/components/HeroText";
 import InputBox from "@/components/InputBox";
-import {
-  connectWebSocket,
-  disconnectWebSocket,
-} from "@/redux/socketManager/socketManager";
+import { connectWebSocket, disconnectWebSocket } from "@/lib/socketManager";
 
 const Home = () => {
   const socketRef = useRef<WebSocket | null>(null);
@@ -53,12 +52,16 @@ const Home = () => {
           case "FINAL_RESPONSE":
             dispatch(
               addMessage({
-                inputText: payload.data.directAnswer,
+                inputText:
+                  typeof payload.data === "string"
+                    ? payload.data
+                    : payload.data?.directAnswer || "",
                 role: "assistant",
               }),
             );
             break;
           case "ERROR":
+            dispatch(setChatStatus("COMPLETED"));
             dispatch(
               addMessage({
                 inputText: `Error: ${payload.message}`,
@@ -86,6 +89,14 @@ const Home = () => {
     };
   }, []);
 
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
   return (
     <main className="flex h-[100dvh] w-full flex-col px-4 py-2">
       {showDocumentInput && (
@@ -105,13 +116,59 @@ const Home = () => {
         ) : (
           /* Messages */
           <div className="flex-1 overflow-y-auto px-2 pb-[1em] pt-[2em] rounded-lg bg-gradient-to-b from-surface to-surface-muted scrollbar-hide">
-            <div className="space-y-2">
+            <div className="space-y-4">
               {messages.map((msg, index) => (
                 <div key={index} className="w-full">
                   <div
-                    className={`whitespace-pre-wrap break-words ${msg.role === "user" ? "text-muted " : "text-foreground "}`}
+                    className={`break-words ${
+                      msg.role === "user" ? "text-muted" : "text-foreground"
+                    }`}
                   >
-                    {msg.inputText}
+                    <div className="flex w-full items-center gap-2">
+                      {msg.image && (
+                        <div className="relative h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg md:h-[7em]">
+                          <Image
+                            src={msg.image}
+                            alt="Attached image"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+
+                      {msg.document && (
+                        <div className=" relative mt-2 flex w-[13em] flex-col items-center gap-2 rounded-lg border bg-primary/10 px-3 py-4 text-center mb-[1em]">
+                          <div className="shrink-0 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+                            {msg.document.type}
+                          </div>
+
+                          <p className="w-full truncate text-sm font-medium text-foreground">
+                            {msg.document.name}
+                          </p>
+
+                          <p className="shrink-0 text-xs text-gray-500">
+                            {(msg.document.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {msg.role === "assistant" ? (
+                      <div
+                        className="legal-response"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(msg.inputText),
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="whitespace-pre-wrap md:text-xl text-[initial]
+"
+                      >
+                        {msg.inputText}
+                      </div>
+                    )}
+
                     {msg.chatId === activeChatId &&
                       chatStatus !== "IDLE" &&
                       chatStatus !== "COMPLETED" &&
@@ -127,6 +184,7 @@ const Home = () => {
                 </div>
               ))}
             </div>
+            <div ref={bottomRef} />
           </div>
         )}
       </div>
