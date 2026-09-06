@@ -15,7 +15,7 @@ export const finalResponse = async (state: LegalStateType) => {
         `=== RETRIEVED LEGAL SECTIONS ===\n${state.retrievedSections || "No sections were retrieved."}`,
     ].join("\n\n");
 
-    const response = await aiSearch(context, state.inputMessage);
+    const response = await aiSearch(context, state.inputMessage, state.image);
 
-    return { finalAnswer: JSON.stringify(response) };
+    return { finalAnswer: response };
 };

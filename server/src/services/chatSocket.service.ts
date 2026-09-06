@@ -1,9 +1,6 @@
 import { WebSocket } from "ws";
 import { legalGraph } from "../graph/graph.js";
-
-/**
- * Handles incoming WebSocket connections and processes chat messages
- */
+import { object } from "zod";
 
 interface DocumentPayload {
   name: string;
@@ -18,6 +15,13 @@ interface PayloadType {
   document?: DocumentPayload | null;
 }
 
+interface FinalAnswer {
+  directAnswer?: string;
+  relevantLegalProvision?: string;
+  explanation?: string;
+  practicalImplications?: string;
+  insufficientInformation?: boolean;
+}
 export const handleChatSocketConnection = (ws: WebSocket): void => {
   ws.on("message", async (rawMessage: Buffer) => {
     try {
@@ -39,17 +43,18 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
       const graphInput = {
         inputMessage,
         image: image ?? null,
-        document: document && documentBuffer
-          ? {
-              fileName: document.name,
-              size: document.size,
-              type: document.type,
-              fileBuffer: documentBuffer,
-            }
-          : null,
+        document:
+          document && documentBuffer
+            ? {
+                fileName: document.name,
+                size: document.size,
+                type: document.type,
+                fileBuffer: documentBuffer,
+              }
+            : null,
       };
 
-      let finalAnswer = "";
+      let finalAnswer: string | FinalAnswer = "";
       const graphStream = await legalGraph.stream(graphInput, {
         streamMode: "updates",
       });
@@ -69,9 +74,21 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
           });
         }
 
-        if (nodeName === "finalResponse") {
-          finalAnswer = (nodeState as { finalAnswer?: string }).finalAnswer ?? "";
+        const nodeAnswer = (nodeState as { finalAnswer: string | FinalAnswer })
+          .finalAnswer;
+        if (nodeAnswer) {
+          finalAnswer = nodeAnswer;
         }
+      }
+
+      if (finalAnswer !== null && typeof finalAnswer === "object") {
+        // finalAnswer is an object
+        const htmlResponse = formatLegalResponse(finalAnswer);
+        finalAnswer = htmlResponse;
+      } else {
+        const htmlResponse = `<div class="legal-section">
+              <p>${finalAnswer}</p>
+            </div>`;
       }
 
       sendPayload(ws, {
@@ -106,35 +123,54 @@ const sendPayload = (ws: WebSocket, payload: object): void => {
   }
 };
 
+type ChatStatus =
+  | "IDLE"
+  | "SEARCHING_LEGAL_DOCS"
+  | "ANALYZING_CONTEXT"
+  | "GENERATING_RESPONSE"
+  | "COMPLETED";
+
 const getNodeStatus = (
   nodeName: string,
-): { status: "SEARCHING_LEGAL_DOCS" | "ANALYZING_CONTEXT" | "GENERATING_RESPONSE"; message: string } | null => {
+): {
+  status: ChatStatus;
+  message: string;
+} | null => {
   switch (nodeName) {
+    case "analysis":
+      return {
+        status: "ANALYZING_CONTEXT",
+        message: "Analyzing your query...",
+      };
+
     case "parseDocument":
       return {
-        status: "SEARCHING_LEGAL_DOCS",
+        status: "ANALYZING_CONTEXT",
         message: "Reading the provided document...",
       };
+
     case "identifyLaws":
       return {
         status: "SEARCHING_LEGAL_DOCS",
         message: "Identifying the relevant laws...",
       };
+
     case "retrieveSections":
       return {
-        status: "ANALYZING_CONTEXT",
+        status: "SEARCHING_LEGAL_DOCS",
         message: "Retrieving relevant legal sections...",
       };
+
     case "finalResponse":
       return {
         status: "GENERATING_RESPONSE",
         message: "Preparing your answer...",
       };
+
     default:
       return null;
   }
 };
-
 const dataUrlToBuffer = (dataUrl: string): Uint8Array => {
   const base64 = dataUrl.split(",", 2)[1];
 
@@ -143,4 +179,61 @@ const dataUrlToBuffer = (dataUrl: string): Uint8Array => {
   }
 
   return Buffer.from(base64, "base64");
+};
+
+const formatLegalResponse = (response: {
+  directAnswer?: string;
+  relevantLegalProvision?: string;
+  explanation?: string;
+  practicalImplications?: string;
+  insufficientInformation?: boolean;
+}): string => {
+  return `
+    <div class="legal-response">
+      ${
+        response.directAnswer
+          ? `<div class="legal-section">
+              <h3>Direct Answer</h3>
+              <p>${response.directAnswer}</p>
+            </div>`
+          : ""
+      }
+
+      ${
+        response.relevantLegalProvision
+          ? `<div class="legal-section">
+              <h3>Relevant Legal Provision</h3>
+              <p>${response.relevantLegalProvision}</p>
+            </div>`
+          : ""
+      }
+
+      ${
+        response.explanation
+          ? `<div class="legal-section">
+              <h3>Explanation</h3>
+              <p>${response.explanation}</p>
+            </div>`
+          : ""
+      }
+
+      ${
+        response.practicalImplications
+          ? `<div class="legal-section">
+              <h3>Practical Implications</h3>
+              <p>${response.practicalImplications}</p>
+            </div>`
+          : ""
+      }
+
+      ${
+        response.insufficientInformation
+          ? `<div class="legal-warning">
+              <strong>Insufficient Information</strong>
+              <p>There is not enough information available to provide a reliable legal analysis.</p>
+            </div>`
+          : ""
+      }
+    </div>
+  `.trim();
 };

@@ -66,7 +66,14 @@ ${state.documentText?.trim() || "None"}
 
   const structuredLlm = llm.withStructuredOutput(LegalResponseSchema);
 
-  const res = await structuredLlm.invoke(prompt);
+  const content = state.image
+    ? [
+        { type: "text" as const, text: prompt },
+        { type: "image_url" as const, image_url: state.image },
+      ]
+    : prompt;
+
+  const res = await structuredLlm.invoke([{ role: "user", content }]);
 
   return { identifiedLaws: res };
 };

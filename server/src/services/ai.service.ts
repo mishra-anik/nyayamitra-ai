@@ -11,64 +11,64 @@ const model = new ChatGoogleGenerativeAI({
 });
 
 export const LegalResponseSchema = z.object({
- directAnswer: z
-  .string()
-  .trim()
-  .min(10, "Please provide a clear answer")
-  .describe(
-    "Give a clear, direct answer to the legal question in simple language. Keep it concise and answer the question first."
-  ),
+  directAnswer: z
+    .string()
+    .trim()
+    .min(10, "Please provide a clear answer")
+    .describe(
+      "Give a clear, direct answer to the legal question in simple language. Keep it concise and answer the question first.",
+    ),
 
-relevantLegalProvision: z
-  .string()
-  .trim()
-  .describe(
-    "Mention the relevant law, Act, section, rule, or legal provision that applies to the answer. Include the section number when available."
-  ),
+  relevantLegalProvision: z
+    .string()
+    .trim()
+    .describe(
+      "Mention the relevant law, Act, section, rule, or legal provision that applies to the answer. Include the section number when available.",
+    ),
 
-explanation: z
-  .string()
-  .trim()
-  .min(20, "Please provide a clear explanation")
-  .describe(
-    "Explain the answer in simple, lawyer-friendly language. Use only the information available in the provided documents. Do not add unsupported legal information."
-  ),
+  explanation: z
+    .string()
+    .trim()
+    .min(20, "Please provide a clear explanation")
+    .describe(
+      "Explain the answer in simple, lawyer-friendly language. Use only the information available in the provided documents. Do not add unsupported legal information.",
+    ),
 
-practicalImplications: z
-  .string()
-  .trim()
-  .default("No specific practical implications noted in the provided context.")
-  .describe(
-    "Explain what this means in practical legal practice, such as how a lawyer may use the provision, what to check, or what issue may arise in a case."
-  ),
+  practicalImplications: z
+    .string()
+    .trim()
+    .default(
+      "No specific practical implications noted in the provided context.",
+    )
+    .describe(
+      "Explain what this means in practical legal practice, such as how a lawyer may use the provision, what to check, or what issue may arise in a case.",
+    ),
 
-insufficientInformation: z
-  .boolean()
-  .default(false)
-  .describe(
-    "Set to true when the provided documents do not contain enough information to answer the question reliably. Set to false when the documents provide sufficient information."
-  ),
-
+  insufficientInformation: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Set to true when the provided documents do not contain enough information to answer the question reliably. Set to false when the documents provide sufficient information.",
+    ),
 });
 
 // Infer the TypeScript type from the schema
 export type LegalResponse = z.infer<typeof LegalResponseSchema>;
 
-// Define the template ONCE outside your function
-// Bind the Zod schema to the model
-const structuredLlm = model.withStructuredOutput(LegalResponseSchema);
-
-// Define the prompt template
-export const legalPrompt = ChatPromptTemplate.fromMessages([
-  [
-    "system",
-    `You are Nyayamitra AI, an Indian legal information assistant covering all domains of Indian Law (Civil, Criminal, Constitutional, Corporate, Tax, Labor, Family, IP, etc.).
+const legalSystemInstructions = `You are Nyayamitra AI, an Indian legal information assistant covering all domains of Indian Law (Civil, Criminal, Constitutional, Corporate, Tax, Labor, Family, IP, etc.).
 
 === INSTRUCTIONS ===
 1. Primary Source: Base your response primarily on the provided "RETRIEVED LEGAL DOCUMENTS".
 2. Hybrid Knowledge: If retrieved documents are partial or missing, supplement using your general knowledge of Indian statutes, rules, and judicial precedents.
 3. Transparency: State explicitly in the "explanation" field if general legal knowledge was used to fill gaps.
-4. Accuracy: Preserve exact legal titles, sections, and rules. Never invent provisions.
+4. Accuracy: Preserve exact legal titles, sections, and rules. Never invent provisions.`;
+
+const structuredLlm = model.withStructuredOutput(LegalResponseSchema);
+
+export const legalPrompt = ChatPromptTemplate.fromMessages([
+  [
+    "system",
+    `${legalSystemInstructions}
 
 === RETRIEVED LEGAL DOCUMENTS ===
 {context}`,
@@ -82,17 +82,23 @@ export const legalPrompt = ChatPromptTemplate.fromMessages([
 export const aiSearch = async (
   context: string,
   query: string,
-): Promise<LegalResponse> => {
+  image: string | null = null,
+) => {
+  const finalResponse = image
+    ? await structuredLlm.invoke([
+        {
+          role: "system",
+          content: `${legalSystemInstructions}\n\n=== RETRIEVED LEGAL DOCUMENTS ===\n${context}`,
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: query },
+            { type: "image_url", image_url: image },
+          ],
+        },
+      ])
+    : await legalPrompt.pipe(structuredLlm).invoke({ context, query });
 
-
-  const chain = legalPrompt.pipe(structuredLlm);
-  const finalResponse = await chain.invoke({ context, query });
-
-  return {
-    ...finalResponse,
-    practicalImplications:
-      finalResponse?.practicalImplications ||
-      "No specific practical implications noted in context.",
-    insufficientInformation: finalResponse?.insufficientInformation ?? false,
-  } as LegalResponse;
+    return finalResponse;
 };
