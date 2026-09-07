@@ -78,7 +78,7 @@ const InputBox = ({
 
     dispatch(addMessage(userMessage));
     dispatch(setActiveChatId(chatId));
-    dispatch(setChatStatus("GENERATING_RESPONSE"));
+    // dispatch(setChatStatus("GENERATING_RESPONSE"));
 
     const payload: {
       inputMessage: string;
@@ -106,6 +106,7 @@ const InputBox = ({
 
     socket.send(JSON.stringify(payload));
 
+    setRowsNum(1);
     dispatch(setInputMessage({ ...inputMessage, inputText: "" }));
     dispatch(setSelectedImage(null));
     dispatch(setSelectedDocument(null));

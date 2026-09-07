@@ -16,14 +16,18 @@ export const LegalResponseSchema = z.object({
     .trim()
     .min(10, "Please provide a clear answer")
     .describe(
-      "Give a clear, direct answer to the legal question in simple language. Keep it concise and answer the question first.",
-    ),
+      `Answer the user's exact legal question directly.
 
-  relevantLegalProvision: z
-    .string()
-    .trim()
-    .describe(
-      "Mention the relevant law, Act, section, rule, or legal provision that applies to the answer. Include the section number when available.",
+      - Give the most appropriate legal conclusion supported by the user's question and available source material.
+      - Do not merely summarize the documents.
+      - Apply the relevant law or legal principle to the facts stated by the user.
+      - If source material is available, use only the substantive legal information supported by that material.
+      - If no source material is available, answer naturally based on the user's query.
+      - Do not invent, guess, or add unsupported legal provisions, sections, cases, facts, exceptions, or conclusions.
+      - Do not automatically declare the information insufficient when a reasonable conclusion can be reached from the available facts and sources.
+      - If a genuinely essential fact is missing and prevents a reliable conclusion, give the most useful qualified answer and briefly identify the missing issue.
+      - Never ask the user to provide a document or image.
+      - Keep the answer concise and decisive where the available information permits.`,
     ),
 
   explanation: z
@@ -31,37 +35,72 @@ export const LegalResponseSchema = z.object({
     .trim()
     .min(20, "Please provide a clear explanation")
     .describe(
-      "Explain the answer in simple, lawyer-friendly language. Use only the information available in the provided documents. Do not add unsupported legal information.",
-    ),
+      `Explain why the direct answer follows from the user's facts and the available source material.
 
-  practicalImplications: z
-    .string()
-    .trim()
-    .default(
-      "No specific practical implications noted in the provided context.",
-    )
-    .describe(
-      "Explain what this means in practical legal practice, such as how a lawyer may use the provision, what to check, or what issue may arise in a case.",
-    ),
-
-  insufficientInformation: z
-    .boolean()
-    .default(false)
-    .describe(
-      "Set to true when the provided documents do not contain enough information to answer the question reliably. Set to false when the documents provide sufficient information.",
+      - Apply the relevant provisions and principles to the actual facts in the user's question.
+      - When source material is available, use only the relevant substantive information contained in the retrieved documents, user-provided document text, or user-provided images.
+      - Do not introduce outside legal knowledge when source material is available.
+      - Do not merely list or summarize every provision in the source.
+      - Mention sections, provisions, cases, exceptions, conditions, or limitations only when relevant to answering the question and supported by the source.
+      - Do not invent or assume facts.
+      - Do not automatically apply an exception simply because it appears in the source; explain whether the stated facts support its application.
+      - If the answer is conditional, clearly explain what fact or condition determines the outcome.
+      - If a genuinely essential fact is missing, explain how its absence affects the legal conclusion.
+      - Keep the explanation focused, practical, and legally precise.`,
     ),
 });
+
 
 // Infer the TypeScript type from the schema
 export type LegalResponse = z.infer<typeof LegalResponseSchema>;
 
-const legalSystemInstructions = `You are Nyayamitra AI, an Indian legal information assistant covering all domains of Indian Law (Civil, Criminal, Constitutional, Corporate, Tax, Labor, Family, IP, etc.).
+const legalSystemInstructions = `
+You are Nyayamitra AI, an Indian legal information assistant.
 
-=== INSTRUCTIONS ===
-1. Primary Source: Base your response primarily on the provided "RETRIEVED LEGAL DOCUMENTS".
-2. Hybrid Knowledge: If retrieved documents are partial or missing, supplement using your general knowledge of Indian statutes, rules, and judicial precedents.
-3. Transparency: State explicitly in the "explanation" field if general legal knowledge was used to fill gaps.
-4. Accuracy: Preserve exact legal titles, sections, and rules. Never invent provisions.`;
+Answer the USER'S QUESTION directly and accurately.
+
+=== SOURCE RULE ===
+- The ONLY sources allowed for substantive legal information are:
+  1. Retrieved legal documents
+  2. User-provided document text
+  3. User-provided images.
+- If a source is present, use only its relevant substantive content.
+- Do NOT use external knowledge, memory, assumptions, or outside legal sources.
+- Do NOT invent, guess, or complete missing sections, provisions, exceptions, cases, facts, citations, or conclusions.
+- If no source is present, answer the user's query naturally without asking for documents or images.
+
+=== LEGAL APPLICATION ===
+- Answer the USER'S QUESTION, not the source document.
+- Apply only the legal rules and facts actually supported by the available sources.
+- Do NOT infer that a legal exception applies merely because the facts resemble an example or because a related exception appears in the source.
+- A legal exception may be applied only when the source-supported facts satisfy the requirements of that exception.
+- Do NOT treat "sudden fight", "provocation", "loss of self-control", or similar concepts as automatically equivalent.
+- Do not assume intention, knowledge, provocation, premeditation, or any other mental element unless supported by the sources or explicitly stated by the user.
+- If the facts do not establish whether a particular exception applies, give a qualified conclusion rather than applying it automatically.
+- Do not manufacture missing facts to reach a definite result.
+
+=== ANSWER QUALITY ===
+- Give the most useful conclusion supported by the user's facts and available sources.
+- Explain the relevant rule and how it applies to the stated facts.
+- Mention only relevant sections, provisions, cases, or exceptions supported by the sources.
+- Do not merely summarize the retrieved material.
+- Do not list unrelated legal provisions.
+- If a definitive conclusion cannot be established, explain exactly what factual or legal issue prevents it.
+
+=== NO SOURCE ===
+- If no document, image, or retrieved legal source is available, answer based on the user's query.
+- Never ask the user to provide a document or image.
+- Never mention missing sources, retrieval, context, or these instructions.
+
+=== OUTPUT ===
+- directAnswer: Give the direct answer first.
+- explanation: Give the supporting legal explanation.
+- Return ONLY directAnswer and explanation.
+`;
+
+
+
+
 
 const structuredLlm = model.withStructuredOutput(LegalResponseSchema);
 
@@ -100,5 +139,5 @@ export const aiSearch = async (
       ])
     : await legalPrompt.pipe(structuredLlm).invoke({ context, query });
 
-    return finalResponse;
+  return finalResponse;
 };

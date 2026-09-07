@@ -18,7 +18,6 @@ export const legalGraph = new StateGraph(LegalState)
   .addConditionalEdges("analysis", routerQuery, {
     legalWithDocument: "parseDocument",
     legalWithoutDocument: "identifyLaws",
-    legalWithImage: "identifyLaws",
     end: END,
   })
 
@@ -36,10 +35,6 @@ function routerQuery(state: LegalStateType) {
 
   if (state.document) {
     return "legalWithDocument";
-  }
-
-  if (state.image) {
-    return "legalWithImage";
   }
 
   return "legalWithoutDocument";

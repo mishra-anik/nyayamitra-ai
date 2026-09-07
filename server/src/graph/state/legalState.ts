@@ -14,10 +14,7 @@ interface IdentifiedLawType {
 }
 interface FinalAnswer {
   directAnswer?: string;
-  relevantLegalProvision?: string;
   explanation?: string;
-  practicalImplications?: string;
-  insufficientInformation?: boolean;
 }
 
 interface QueryAnalysisState {

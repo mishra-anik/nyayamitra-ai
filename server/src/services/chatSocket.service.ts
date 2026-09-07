@@ -87,7 +87,7 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         finalAnswer = htmlResponse;
       } else {
         const htmlResponse = `<div class="legal-section">
-              <p>${finalAnswer}</p>
+              <h2>${finalAnswer}</h2>
             </div>`;
       }
 
@@ -193,44 +193,14 @@ const formatLegalResponse = (response: {
       ${
         response.directAnswer
           ? `<div class="legal-section">
-              <h3>Direct Answer</h3>
-              <p>${response.directAnswer}</p>
+              <h3>${response.directAnswer}</h3>
             </div>`
           : ""
-      }
-
-      ${
-        response.relevantLegalProvision
-          ? `<div class="legal-section">
-              <h3>Relevant Legal Provision</h3>
-              <p>${response.relevantLegalProvision}</p>
-            </div>`
-          : ""
-      }
-
+      }     
       ${
         response.explanation
           ? `<div class="legal-section">
-              <h3>Explanation</h3>
-              <p>${response.explanation}</p>
-            </div>`
-          : ""
-      }
-
-      ${
-        response.practicalImplications
-          ? `<div class="legal-section">
-              <h3>Practical Implications</h3>
-              <p>${response.practicalImplications}</p>
-            </div>`
-          : ""
-      }
-
-      ${
-        response.insufficientInformation
-          ? `<div class="legal-warning">
-              <strong>Insufficient Information</strong>
-              <p>There is not enough information available to provide a reliable legal analysis.</p>
+              <h3>${response.explanation}</h3>
             </div>`
           : ""
       }

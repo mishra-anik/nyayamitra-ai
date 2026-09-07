@@ -119,14 +119,10 @@ const Home = () => {
             <div className="space-y-4">
               {messages.map((msg, index) => (
                 <div key={index} className="w-full">
-                  <div
-                    className={`break-words ${
-                      msg.role === "user" ? "text-muted" : "text-foreground"
-                    }`}
-                  >
+                  <div className="break-words">
                     <div className="flex w-full items-center gap-2">
                       {msg.image && (
-                        <div className="relative h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg md:h-[7em]">
+                        <div className="relative h-[9em] w-[7em] shrink-0 overflow-hidden rounded-lg md:h-[7em] mb-[1em]">
                           <Image
                             src={msg.image}
                             alt="Attached image"
@@ -161,10 +157,7 @@ const Home = () => {
                         }}
                       />
                     ) : (
-                      <div
-                        className="whitespace-pre-wrap md:text-xl text-[initial]
-"
-                      >
+                      <div className="whitespace-pre-wrap bg-primary/10 text-gray-700 w-fit max-w-full px-[1em] py-2 ">
                         {msg.inputText}
                       </div>
                     )}
