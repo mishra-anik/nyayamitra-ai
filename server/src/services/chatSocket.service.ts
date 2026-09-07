@@ -87,7 +87,7 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         finalAnswer = htmlResponse;
       } else {
         const htmlResponse = `<div class="legal-section">
-              <h2>${finalAnswer}</h2>
+              <h3>${finalAnswer}</h3>
             </div>`;
       }
 

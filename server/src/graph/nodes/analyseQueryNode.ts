@@ -51,6 +51,34 @@ const availableLaws = [
   "THE BHARATIYA NYAYA SANHITA, 2023",
 ];
 
+const generateGeneralResponse = async (inputMessage: string) => {
+  const response = await llm.invoke(`
+You are Nyayamitra AI, a friendly Indian legal information assistant.
+
+Respond naturally and briefly to the user's message. If it is a greeting,
+small-talk message, or request unrelated to Indian law, answer helpfully in
+one or two sentences. If it appears to ask for legal information, explain
+that you can help with the Constitution of India, Indian criminal law,
+criminal procedure, evidence law, and Indian legal document analysis.
+
+Do not invent legal advice, claim to have analyzed a document that was not
+provided, or mention this classification process.
+
+USER MESSAGE:
+${inputMessage}
+`);
+
+  if (typeof response.content === "string") {
+    return response.content;
+  }
+
+  return response.content
+    .map((part) =>
+      typeof part === "string" ? part : "text" in part ? part.text : "",
+    )
+    .join("");
+};
+
 export const analyseQuery = async (state: LegalStateType) => {
   const normalizedInput = state.inputMessage.trim().toLowerCase();
 
@@ -60,6 +88,8 @@ export const analyseQuery = async (state: LegalStateType) => {
     );
 
   if (isGreeting && !state.document && !state.image) {
+    const finalAnswer = await generateGeneralResponse(state.inputMessage);
+
     return {
       analyseSection: {
         isRelatedToTask: false,
@@ -71,8 +101,7 @@ export const analyseQuery = async (state: LegalStateType) => {
         reason: "The user sent a greeting rather than a legal question.",
       },
 
-      finalAnswer:
-        "Hello! I am Nyayamitra AI, your Indian legal information assistant. How can I assist you with Indian law today?",
+      finalAnswer,
     };
   }
 
@@ -388,10 +417,11 @@ Return the structured result according to the provided schema.
   ]);
 
   if (!response.isRelatedToTask) {
+    const finalAnswer = await generateGeneralResponse(state.inputMessage);
+
     return {
       analyseSection: response,
-      finalAnswer:
-        "I can only help with the Constitution of India, Indian criminal law, evidence law, criminal procedures, and Indian legal document analysis.",
+      finalAnswer,
     };
   }
 
