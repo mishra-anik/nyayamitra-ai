@@ -6,15 +6,18 @@ const QueryAnalysisSchema = z.object({
   isRelatedToTask: z
     .boolean()
     .describe(
-      "Whether the query is related to legal analysis/Indian legal matters",
+      "Whether the query is related to Indian law, including the Constitution of India, criminal law, criminal procedure, evidence law, or legal document analysis.",
     ),
+
   isImageLegal: z
     .boolean()
     .describe(
-      "Whether the attached image visibly contains legal content such as a law, act, section, court document, FIR, notice, judgment, or legal text. Return false for random or non-legal images.",
+      "Whether the attached image visibly contains legal content such as the Constitution, statute, Act, section, court document, FIR, notice, judgment, order, legal text, or other legal material. Return false for random or non-legal images.",
     ),
+
   queryType: z
     .enum([
+      "constitutional_law",
       "criminal_procedure",
       "evidence",
       "substantive_crime",
@@ -22,22 +25,27 @@ const QueryAnalysisSchema = z.object({
       "general_legal",
       "irrelevant",
     ])
-    .describe("The primary type of legal query"),
+    .describe("The primary type of Indian legal query."),
+
   mainIssues: z
     .array(z.string())
-    .describe("Key legal issues identified in the query"),
+    .describe("Key legal issues identified in the query."),
+
   hasDocument: z
     .boolean()
-    .describe("Whether the user is asking about a specific document"),
+    .describe("Whether the user is asking about a specific uploaded document."),
+
   analysisRequired: z
     .string()
-    .describe("What kind of legal analysis is needed"),
+    .describe("What kind of legal analysis is needed."),
+
   reason: z
     .string()
-    .describe("Explanation of whether query is related to task"),
+    .describe("Explanation of why the query is or is not within scope."),
 });
 
 const availableLaws = [
+  "THE CONSTITUTION OF INDIA",
   "THE BHARATIYA NAGARIK SURAKSHA SANHITA, 2023",
   "THE BHARATIYA SAKSHYA ADHINIYAM, 2023",
   "THE BHARATIYA NYAYA SANHITA, 2023",
@@ -45,12 +53,13 @@ const availableLaws = [
 
 export const analyseQuery = async (state: LegalStateType) => {
   const normalizedInput = state.inputMessage.trim().toLowerCase();
+
   const isGreeting =
     /^(hi|hello|hey|hii|good morning|good afternoon|good evening)[!.?]*$/.test(
       normalizedInput,
     );
 
-  if (isGreeting && !state.document) {
+  if (isGreeting && !state.document && !state.image) {
     return {
       analyseSection: {
         isRelatedToTask: false,
@@ -61,6 +70,7 @@ export const analyseQuery = async (state: LegalStateType) => {
         analysisRequired: "",
         reason: "The user sent a greeting rather than a legal question.",
       },
+
       finalAnswer:
         "Hello! I am Nyayamitra AI, your Indian legal information assistant. How can I assist you with Indian law today?",
     };
@@ -75,9 +85,10 @@ A document is attached:
 
 IMPORTANT:
 The user's query may be vague or may not explicitly mention the document.
+
 You MUST inspect/analyze the document content when it is available.
 
-If the user says things such as:
+If the user says:
 - "explain this"
 - "explain me"
 - "what is this?"
@@ -87,10 +98,24 @@ If the user says things such as:
 - "what does this mean?"
 - "help me understand this"
 
-then treat the request as referring to the uploaded document and determine
-whether the document contains legal content.
+then treat the request as referring to the uploaded document.
 
-Do NOT classify the request based only on the user's text.
+Determine whether the document contains Indian legal content, including:
+- Constitution of India
+- Constitutional Articles
+- Acts and statutes
+- Criminal law
+- Criminal procedure
+- Evidence law
+- Court orders or judgments
+- FIRs
+- Police documents
+- Notices
+- Summons
+- Charge sheets
+- Complaints
+- Legal agreements
+- Other legal documents
 `
     : state.image
       ? `
@@ -100,102 +125,277 @@ IMPORTANT:
 You MUST inspect the image itself before deciding whether the request is
 related to the chatbot's legal scope.
 
-The user may use a vague query such as:
-- "explain this"
-- "what is this?"
-- "tell me about this"
-- "analyze this"
-- "what does this mean?"
-
-In these cases, determine what is shown in the image and whether it contains
-legal content such as an FIR, notice, court document, legal order, statute,
-section, complaint, agreement, police document, summons, charge sheet, or
-other legal material.
+Determine whether the image contains identifiable legal content such as:
+- Constitution of India
+- Constitutional Article
+- Act or statute
+- Legal section
+- Court document
+- Judgment
+- Court order
+- FIR
+- Police document
+- Legal notice
+- Summons
+- Charge sheet
+- Complaint
+- Agreement
+- Other legal material
 
 Do NOT assume an image is legal merely because the user's wording contains
-legal terms.
+legal terminology.
+
+Set isImageLegal to false for:
+- Ordinary photographs
+- People
+- Animals
+- Food
+- Scenery
+- Random screenshots
+- Non-legal documents
+- Unclear images without identifiable legal content
 `
       : "No document or image provided by user.";
 
   const prompt = `
-You are an Indian legal query classifier.
+You are an Indian legal query classifier for a legal-information chatbot.
 
-Determine whether the user's request is within the chatbot's scope:
-- Indian criminal law
-- Criminal procedure
-- Indian evidence law
-- Legal document analysis
-- Indian legal statutes and interpretations
+The chatbot's scope includes:
 
-DECISION ORDER:
-1. First decide whether the request is actually asking about Indian law or a
-  legal document.
-2. A greeting, farewell, thanks, introduction, small talk, or general
-  non-legal question is OUT OF SCOPE.
-3. Do not treat the words "law", "case", "section", or "document" alone as
-  proof that the request is legal. Judge the complete meaning of the request.
-4. If an uploaded document is present and the user asks to analyze, explain,
-  summarize, or review it, classify the request as legal document analysis.
-5. If an image is provided, inspect it before deciding. If the user asks
-  which law, section, act, notice, or legal text is shown or mentioned in the
-  image, classify the request as legal document analysis.
-6. Set isImageLegal to true only when the image itself contains identifiable
-  legal content. A user's legal wording does not make a random image legal.
-  Set isImageLegal to false for ordinary photos, people, animals, scenery,
-  food, screenshots without legal content, or unclear images.
+1. Constitution of India
+2. Indian criminal law
+3. Indian criminal procedure
+4. Indian evidence law
+5. Indian legal statutes
+6. Indian legal document analysis
 
-OUT-OF-SCOPE EXAMPLES:
-- "hi", "hello", "hey", "good morning"
-- "how are you?", "thanks", "bye"
-- cooking, weather, sports, coding, mathematics, or general trivia
+Determine whether the user's request is within this scope.
 
-For an out-of-scope request, set isRelatedToTask to false, queryType to
-"irrelevant", mainIssues to [], hasDocument to false unless a document is
-actually provided, and explain the decision in reason. Never classify a simple
-greeting as a legal query.
+==================================================
+CONSTITUTION OF INDIA
+==================================================
 
-Available laws:
+Questions relating to the Constitution of India MUST be treated as
+constitutional_law.
+
+Examples include questions about:
+
+- Fundamental Rights
+- Right to Equality
+- Right to Freedom
+- Right against Exploitation
+- Right to Freedom of Religion
+- Cultural and Educational Rights
+- Right to Constitutional Remedies
+- Article 12
+- Article 13
+- Article 14
+- Article 15
+- Article 16
+- Article 17
+- Article 18
+- Article 19
+- Article 20
+- Article 21
+- Article 21A
+- Article 22
+- Article 23
+- Article 24
+- Article 25
+- Article 26
+- Article 27
+- Article 28
+- Article 29
+- Article 30
+- Article 32
+- Article 226
+- Directive Principles of State Policy
+- Fundamental Duties
+- Constitutional amendments
+- Basic Structure Doctrine
+- Judicial review
+- Separation of powers
+- Federalism
+- Parliamentary system
+- President and Governor
+- Parliament and State Legislatures
+- Supreme Court and High Courts
+- Constitutional writs
+- Habeas Corpus
+- Mandamus
+- Prohibition
+- Certiorari
+- Quo Warranto
+- Emergency provisions
+- Citizenship provisions
+- Constitutional interpretation
+- Constitutional validity of laws
+
+Examples:
+
+"What is Article 21?"
+"What is right to freedom?"
+"What are Fundamental Rights?"
+"Explain Article 19."
+"What is the Right to Equality?"
+"Can the government restrict my fundamental rights?"
+"What is habeas corpus?"
+"Which article provides constitutional remedies?"
+"What is basic structure doctrine?"
+
+These should be classified as:
+
+queryType = "constitutional_law"
+
+==================================================
+CRIMINAL LAW
+==================================================
+
+BNS → substantive criminal offences, definitions, punishments, liability,
+criminal acts, offences, exceptions, etc.
+
+BNSS → criminal procedure, FIR, arrest, bail, investigation, remand,
+search, seizure, charge sheet, trial, summons, warrants, etc.
+
+BSA → evidence, witnesses, documents, electronic evidence, admissibility,
+relevancy, burden of proof, presumptions, confessions, etc.
+
+==================================================
+QUERY CLASSIFICATION
+==================================================
+
+Use these query types:
+
+constitutional_law
+- Constitution of India and constitutional provisions.
+
+criminal_procedure
+- BNSS and criminal procedural matters.
+
+evidence
+- BSA and Indian evidence-law matters.
+
+substantive_crime
+- BNS and substantive criminal offences.
+
+mixed
+- The query materially involves two or more legal areas.
+
+general_legal
+- Indian legal matters within the chatbot's general legal scope that
+  do not clearly belong to the specific categories above.
+
+irrelevant
+- Non-legal or out-of-scope requests.
+
+==================================================
+DECISION RULES
+==================================================
+
+1. First determine whether the user is asking about Indian law or a legal
+   document.
+
+2. Questions about the Constitution of India are ALWAYS within scope.
+
+3. If the user uses informal wording, infer the likely legal meaning.
+
+For example:
+- "what freedom of right"
+- "freedom right"
+- "right of freedom"
+- "what is freedom in constitution"
+- "freedom fundamental right"
+
+These should be understood as likely referring to the
+"Right to Freedom" under the Constitution of India and classified as
+constitutional_law.
+
+4. Do not require the user to provide an Article number.
+
+5. If the user asks about a Fundamental Right without specifying an Article,
+   classify it as constitutional_law.
+
+6. If the user asks about an Article of the Constitution, classify it as
+   constitutional_law unless the question clearly concerns another legal
+   issue.
+
+7. If the query involves both constitutional rights and criminal law,
+   procedure, or evidence, use "mixed" when both areas are materially
+   relevant.
+
+8. Do not classify a query as legal merely because it contains words such as
+   "law", "case", "section", "right", or "document". Judge the complete
+   meaning.
+
+9. A greeting, farewell, thanks, introduction, small talk, coding question,
+   mathematics question, cooking question, sports question, weather
+   question, or other unrelated question is out of scope.
+
+10. If an uploaded legal document is being explained, summarized, analyzed,
+    or reviewed, classify it as a legal query.
+
+11. If an image contains legal material, set isImageLegal to true.
+
+12. If an image is unrelated to law, set isImageLegal to false.
+
+13. Do not answer the user's legal question. Only classify and analyze it.
+
+==================================================
+AVAILABLE LAWS
+==================================================
+
 ${availableLaws.map((law) => `- ${law}`).join("\n")}
 
-Classify the query and identify the relevant law(s).
+==================================================
+DOCUMENT
+==================================================
 
-Rules:
-- BNS → substantive criminal offences and punishments
-- BNSS → criminal procedure, FIR, arrest, bail, investigation, trial, etc.
-- BSA → evidence, witnesses, documents, electronic evidence, burden of proof, etc.
-- Select multiple laws when necessary.
-- Do not invent or add laws.
-- Mark unrelated questions as "irrelevant".
-- Do not answer the legal question; only analyze it.
-
-Document:
 ${documentInfo}
 
-Image:
-${state.image ? "An image is attached and must be inspected." : "No image uploaded."}
+==================================================
+IMAGE
+==================================================
 
-User query:
+${
+  state.image
+    ? "An image is attached and must be inspected."
+    : "No image uploaded."
+}
+
+==================================================
+USER QUERY
+==================================================
+
 "${state.inputMessage}"
 
-Return the structured result according to the schema.
+Return the structured result according to the provided schema.
 `;
 
   const structuredLlm = llm.withStructuredOutput(QueryAnalysisSchema);
+
   const content = state.image
     ? [
         { type: "text" as const, text: prompt },
         { type: "image_url" as const, image_url: state.image },
       ]
     : prompt;
-  const response = await structuredLlm.invoke([{ role: "user", content }]);
+
+  const response = await structuredLlm.invoke([
+    {
+      role: "user",
+      content,
+    },
+  ]);
 
   if (!response.isRelatedToTask) {
     return {
       analyseSection: response,
       finalAnswer:
-        "I can only help with Constitution of India Indian criminal law, evidence law, legal procedures, and legal document analysis.",
+        "I can only help with the Constitution of India, Indian criminal law, evidence law, criminal procedures, and Indian legal document analysis.",
     };
   }
 
-  return { analyseSection: response };
+  return {
+    analyseSection: response,
+  };
 };
