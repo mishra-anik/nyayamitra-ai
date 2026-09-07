@@ -89,16 +89,25 @@ const Home = () => {
     };
   }, []);
 
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messageContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: "smooth",
+    const frameId = requestAnimationFrame(() => {
+      const container = messageContainerRef.current;
+
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "smooth",
+        });
+      }
     });
-  }, [messages]);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [messages, chatStatusMessage]);
 
   return (
-    <main className="flex h-[100dvh] w-full flex-col px-4 py-2">
+    <main className="flex h-[100dvh] w-full flex-col px-4 py-2 bg-gradient-to-b from-surface to-surface-muted">
       {showDocumentInput && (
         <div
           className="absolute w-full h-full inset-0 z-40 "
@@ -106,7 +115,7 @@ const Home = () => {
         />
       )}
       {/* ================= MESSAGE AREA ================= */}
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden scrollbar-hide">
+      <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-hidden scrollbar-hide">
         {messages.length === 0 &&
         selectedImage === null &&
         selectedDocument === null ? (
@@ -115,8 +124,11 @@ const Home = () => {
           </div>
         ) : (
           /* Messages */
-          <div className="flex-1 overflow-y-auto px-2 pb-[1em] pt-[2em] rounded-lg bg-gradient-to-b from-surface to-surface-muted scrollbar-hide">
-            <div className="space-y-4">
+          <div
+            ref={messageContainerRef}
+            className="min-h-0 flex-1 overflow-y-auto rounded-lg pb-28 pt-[2em] scrollbar-hide md:pb-[1em]"
+          >
+            <div className="space-y-2">
               {messages.map((msg, index) => (
                 <div key={index} className="w-full">
                   <div className="break-words">
@@ -151,7 +163,7 @@ const Home = () => {
 
                     {msg.role === "assistant" ? (
                       <div
-                        className="legal-response"
+                        className=""
                         dangerouslySetInnerHTML={{
                           __html: DOMPurify.sanitize(msg.inputText),
                         }}
@@ -177,7 +189,6 @@ const Home = () => {
                 </div>
               ))}
             </div>
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
