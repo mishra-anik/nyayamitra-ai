@@ -6,6 +6,7 @@ const availableLaws = [
   "THE BHARATIYA NAGARIK SURAKSHA SANHITA, 2023",
   "THE BHARATIYA SAKSHYA ADHINIYAM, 2023",
   "THE BHARATIYA NYAYA SANHITA, 2023",
+  "THE CONSTITUTION OF INDIA",
 ];
 
 const LegalResponseSchema = z.object({
@@ -43,6 +44,7 @@ LAW CLASSIFICATION:
 - BNSS = criminal PROCEDURE: arrest, FIR, investigation, search/seizure, remand, custody, bail procedure, warrants, summons, cognizance, trial procedure.
 - BSA = EVIDENCE: admissibility, relevance, burden of proof, confession, admission, witnesses, documents, electronic/digital evidence, expert evidence, presumptions.
 - BNS = substantive CRIMINAL OFFENCES: murder, rape, theft, cheating, assault, kidnapping, abetment, conspiracy, attempt, organised crime, terrorism, ingredients and punishment.
+- CONSTITUTION OF INDIA = constitutional matters: Fundamental Rights, equality, liberty, freedom, constitutional remedies, writs, citizenship, elections, Parliament/State Legislature, President/Governor, Centre-State relations, constitutional offices, powers/duties, constitutional validity, amendments, schedules, or any question specifically about an Article/Part/Schedule of the Constitution
 
 IMPORTANT:
 - Use only the exact laws listed above.

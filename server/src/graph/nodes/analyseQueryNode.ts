@@ -45,9 +45,10 @@ const availableLaws = [
 
 export const analyseQuery = async (state: LegalStateType) => {
   const normalizedInput = state.inputMessage.trim().toLowerCase();
-  const isGreeting = /^(hi|hello|hey|hii|good morning|good afternoon|good evening)[!.?]*$/.test(
-    normalizedInput,
-  );
+  const isGreeting =
+    /^(hi|hello|hey|hii|good morning|good afternoon|good evening)[!.?]*$/.test(
+      normalizedInput,
+    );
 
   if (isGreeting && !state.document) {
     return {
@@ -66,7 +67,7 @@ export const analyseQuery = async (state: LegalStateType) => {
   }
 
   const documentInfo = state.document
-  ? `
+    ? `
 A document is attached:
 - File name: ${state.document.fileName}
 - File type: ${state.document.type}
@@ -91,8 +92,8 @@ whether the document contains legal content.
 
 Do NOT classify the request based only on the user's text.
 `
-  : state.image
-    ? `
+    : state.image
+      ? `
 An image is attached.
 
 IMPORTANT:
@@ -114,8 +115,7 @@ other legal material.
 Do NOT assume an image is legal merely because the user's wording contains
 legal terms.
 `
-    : "No document or image provided by user.";
-
+      : "No document or image provided by user.";
 
   const prompt = `
 You are an Indian legal query classifier.
