@@ -148,25 +148,20 @@ textarea::placeholder {
    Legal Response
    ======================================== */
 
-/* .legal-response {
-  width: 100%;
-  color: var(--text);
-  line-height: 1.6;
-}
 
-.legal-section {
-  margin-bottom: 1rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-  box-shadow: 0 2px 8px rgba(36, 48, 47, 0.04);
-} */
+ .legal-response{
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 2;
+ }
+
+
 
 
 
 .legal-section h3 {
-  margin: 0 0 0.4rem;
   line-height: 1.4;
   font-size: medium;
 }

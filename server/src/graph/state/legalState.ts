@@ -24,6 +24,7 @@ interface QueryAnalysisState {
     | "criminal_procedure"
     | "evidence"
     | "substantive_crime"
+    | "constitutional"
     | "mixed"
     | "general_legal"
     | "irrelevant";

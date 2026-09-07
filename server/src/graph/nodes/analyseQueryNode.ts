@@ -193,7 +193,7 @@ Return the structured result according to the schema.
     return {
       analyseSection: response,
       finalAnswer:
-        "I can only help with Indian criminal law, evidence law, legal procedures, and legal document analysis.",
+        "I can only help with Constitution of India Indian criminal law, evidence law, legal procedures, and legal document analysis.",
     };
   }
 
