@@ -200,6 +200,7 @@ const formatLegalResponse = (response: {
       ${
         response.explanation
           ? `<div class="legal-section">
+          <span className="text-muted mr-2">Explanation:</span>
               <h3>${response.explanation}</h3>
             </div>`
           : ""

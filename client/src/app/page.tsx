@@ -157,7 +157,7 @@ const Home = () => {
                         }}
                       />
                     ) : (
-                      <div className="whitespace-pre-wrap bg-primary/10 text-gray-700 w-fit max-w-full px-[1em] py-2 ">
+                      <div className="whitespace-pre-wrap bg-primary/10 text-gray-700 w-fit max-w-full px-[1em] py-2 rounded-md shadow-[inset_0_0_10px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.08)]backdrop-blur-md">
                         {msg.inputText}
                       </div>
                     )}
