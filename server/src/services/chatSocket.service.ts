@@ -1,5 +1,6 @@
 import { WebSocket } from "ws";
 import { legalGraph } from "../graph/graph.js";
+import { ChatMessage } from "../graph/state/legalState.js";
 
 interface DocumentPayload {
   name: string;
@@ -21,13 +22,9 @@ interface FinalAnswer {
   practicalImplications?: string;
   insufficientInformation?: boolean;
 }
-import { ChatMessage } from "../graph/state/legalState.js";
 
-type ChatWebSocket = WebSocket & {
-  chatHistory: ChatMessage[];
-};
-export const handleChatSocketConnection = (ws: ChatWebSocket): void => {
-  ws.chatHistory = [];
+export const handleChatSocketConnection = (ws: WebSocket): void => {
+  const chatHistory: ChatMessage[] = [];
   ws.on("message", async (rawMessage: Buffer) => {
     try {
       const payload: PayloadType = JSON.parse(rawMessage.toString());
@@ -45,7 +42,7 @@ export const handleChatSocketConnection = (ws: ChatWebSocket): void => {
         });
       }
 
-      ws.chatHistory.push({
+      chatHistory.push({
         role: "user",
         content: inputMessage,
         image: image ?? undefined,
@@ -54,7 +51,7 @@ export const handleChatSocketConnection = (ws: ChatWebSocket): void => {
 
       const graphInput = {
         inputMessage,
-        chatHistory: ws.chatHistory.slice(0, -1),
+        chatHistory: chatHistory.slice(0, -1),
         image: image ?? null,
         document:
           document && documentBuffer
@@ -101,20 +98,20 @@ export const handleChatSocketConnection = (ws: ChatWebSocket): void => {
         }
       }
 
-      const currentUserMessage = ws.chatHistory.at(-1);
+      const currentUserMessage = chatHistory.at(-1);
       if (currentUserMessage && currentDocumentText) {
         currentUserMessage.documentText = currentDocumentText;
       }
 
       if (finalAnswer !== null && typeof finalAnswer === "object") {
-        ws.chatHistory.push({
+        chatHistory.push({
           role: "assistant",
           content: JSON.stringify(finalAnswer),
         });
         const htmlResponse = formatLegalResponse(finalAnswer);
         finalAnswer = htmlResponse;
       } else {
-        ws.chatHistory.push({
+        chatHistory.push({
           role: "assistant",
           content: finalAnswer,
         });
