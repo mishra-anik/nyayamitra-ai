@@ -1,4 +1,7 @@
-import { LegalStateType } from "../state/legalState.js";
+import {
+  chatHistoryInstructions,
+  LegalStateType,
+} from "../state/legalState.js";
 import { llm } from "../../llm/gemini.js";
 import z from "zod";
 
@@ -64,6 +67,8 @@ ${state.inputMessage?.trim() || "None"}
 
 DOCUMENT:
 ${state.documentText?.trim() || "None"}
+
+${chatHistoryInstructions(state.chatHistory)}
 `;
 
   const structuredLlm = llm.withStructuredOutput(LegalResponseSchema);

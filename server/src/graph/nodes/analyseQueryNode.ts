@@ -1,4 +1,7 @@
-import { LegalStateType } from "../state/legalState.js";
+import {
+  chatHistoryInstructions,
+  LegalStateType,
+} from "../state/legalState.js";
 import { llm } from "../../llm/gemini.js";
 import z from "zod";
 
@@ -51,22 +54,43 @@ const availableLaws = [
   "THE BHARATIYA NYAYA SANHITA, 2023",
 ];
 
-const generateGeneralResponse = async (inputMessage: string) => {
-  const response = await llm.invoke(`
+const generateGeneralResponse = async (
+  inputMessage: string,
+  chatHistory: LegalStateType["chatHistory"],
+  image: string | null = null,
+) => {
+  const prompt = `
 You are Nyayamitra AI, a friendly Indian legal information assistant.
 
 Respond naturally and briefly to the user's message. If it is a greeting,
-small-talk message, or request unrelated to Indian law, answer helpfully in
-one or two sentences. If it appears to ask for legal information, explain
-that you can help with the Constitution of India, Indian criminal law,
-criminal procedure, evidence law, and Indian legal document analysis.
+small-talk message, or request unrelated to Indian law, continue the existing
+conversation naturally using the previous conversation when relevant. Do not
+repeat the same introduction or fixed wording in every reply. For example, if
+the user asks "how are you?" after a greeting, respond naturally such as
+"I'm doing well, thank you. What about you?" If it appears to ask for legal
+information, explain that you can help with the Constitution of India, Indian
+criminal law, criminal procedure, evidence law, and Indian legal document
+analysis.
 
 Do not invent legal advice, claim to have analyzed a document that was not
 provided, or mention this classification process.
 
+${chatHistoryInstructions(chatHistory)}
+
 USER MESSAGE:
 ${inputMessage}
-`);
+`;
+
+  const response = await llm.invoke(
+    image
+      ? [
+          { role: "user", content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: image },
+          ] },
+        ]
+      : prompt,
+  );
 
   if (typeof response.content === "string") {
     return response.content;
@@ -88,7 +112,11 @@ export const analyseQuery = async (state: LegalStateType) => {
     );
 
   if (isGreeting && !state.document && !state.image) {
-    const finalAnswer = await generateGeneralResponse(state.inputMessage);
+    const finalAnswer = await generateGeneralResponse(
+      state.inputMessage,
+      state.chatHistory,
+      state.image,
+    );
 
     return {
       analyseSection: {
@@ -392,6 +420,12 @@ ${
 }
 
 ==================================================
+PREVIOUS CONVERSATION
+==================================================
+
+${chatHistoryInstructions(state.chatHistory)}
+
+==================================================
 USER QUERY
 ==================================================
 
@@ -417,7 +451,11 @@ Return the structured result according to the provided schema.
   ]);
 
   if (!response.isRelatedToTask) {
-    const finalAnswer = await generateGeneralResponse(state.inputMessage);
+    const finalAnswer = await generateGeneralResponse(
+      state.inputMessage,
+      state.chatHistory,
+      state.image,
+    );
 
     return {
       analyseSection: response,

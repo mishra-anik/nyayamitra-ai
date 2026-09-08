@@ -1,6 +1,5 @@
 import { WebSocket } from "ws";
 import { legalGraph } from "../graph/graph.js";
-import { object } from "zod";
 
 interface DocumentPayload {
   name: string;
@@ -22,7 +21,13 @@ interface FinalAnswer {
   practicalImplications?: string;
   insufficientInformation?: boolean;
 }
-export const handleChatSocketConnection = (ws: WebSocket): void => {
+import { ChatMessage } from "../graph/state/legalState.js";
+
+type ChatWebSocket = WebSocket & {
+  chatHistory: ChatMessage[];
+};
+export const handleChatSocketConnection = (ws: ChatWebSocket): void => {
+  ws.chatHistory = [];
   ws.on("message", async (rawMessage: Buffer) => {
     try {
       const payload: PayloadType = JSON.parse(rawMessage.toString());
@@ -40,8 +45,16 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         });
       }
 
+      ws.chatHistory.push({
+        role: "user",
+        content: inputMessage,
+        image: image ?? undefined,
+        documentName: document?.name,
+      });
+
       const graphInput = {
         inputMessage,
+        chatHistory: ws.chatHistory.slice(0, -1),
         image: image ?? null,
         document:
           document && documentBuffer
@@ -55,6 +68,7 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
       };
 
       let finalAnswer: string | FinalAnswer = "";
+      let currentDocumentText = "";
       const graphStream = await legalGraph.stream(graphInput, {
         streamMode: "updates",
       });
@@ -79,14 +93,32 @@ export const handleChatSocketConnection = (ws: WebSocket): void => {
         if (nodeAnswer) {
           finalAnswer = nodeAnswer;
         }
+
+        const nodeDocumentText = (nodeState as { documentText?: string })
+          .documentText;
+        if (nodeDocumentText) {
+          currentDocumentText = nodeDocumentText;
+        }
+      }
+
+      const currentUserMessage = ws.chatHistory.at(-1);
+      if (currentUserMessage && currentDocumentText) {
+        currentUserMessage.documentText = currentDocumentText;
       }
 
       if (finalAnswer !== null && typeof finalAnswer === "object") {
-        // finalAnswer is an object
+        ws.chatHistory.push({
+          role: "assistant",
+          content: JSON.stringify(finalAnswer),
+        });
         const htmlResponse = formatLegalResponse(finalAnswer);
         finalAnswer = htmlResponse;
       } else {
-        const htmlResponse = `<div class="legal-section">
+        ws.chatHistory.push({
+          role: "assistant",
+          content: finalAnswer,
+        });
+        finalAnswer = `<div class="legal-section">
               <h3>${finalAnswer}</h3>
             </div>`;
       }

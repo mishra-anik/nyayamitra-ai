@@ -1,6 +1,10 @@
 import "dotenv/config";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import {
+  ChatMessage,
+  chatHistoryInstructions,
+} from "../graph/state/legalState.js";
 import { z } from "zod";
 
 // Initialize the LLM model
@@ -235,7 +239,10 @@ export const legalPrompt = ChatPromptTemplate.fromMessages([
     `${legalSystemInstructions}
 
 === RETRIEVED LEGAL DOCUMENTS ===
-{context}`,
+    {context}
+
+  Use the previous conversation when the current question refers to it.
+    {chatHistory}`,
   ],
   ["human", "{query}"],
 ]);
@@ -247,12 +254,13 @@ export const aiSearch = async (
   context: string,
   query: string,
   image: string | null = null,
+  chatHistory: ChatMessage[] = [],
 ) => {
   const finalResponse = image
     ? await structuredLlm.invoke([
         {
           role: "system",
-          content: `${legalSystemInstructions}\n\n=== RETRIEVED LEGAL DOCUMENTS ===\n${context}`,
+          content: `${legalSystemInstructions}\n\n=== RETRIEVED LEGAL DOCUMENTS ===\n${context}\n\n${chatHistoryInstructions(chatHistory)}`,
         },
         {
           role: "user",
@@ -262,7 +270,11 @@ export const aiSearch = async (
           ],
         },
       ])
-    : await legalPrompt.pipe(structuredLlm).invoke({ context, query });
+    : await legalPrompt.pipe(structuredLlm).invoke({
+        context,
+        query,
+        chatHistory: chatHistoryInstructions(chatHistory),
+      });
 
   return finalResponse;
 };
